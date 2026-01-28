@@ -1,0 +1,15 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Jupyter
+.ipynb_checkpoints/
+
+# DuckDB
+*.duckdb
+*.db
+
+# Data
+*.csv
+*.parquet
