@@ -35,5 +35,4 @@ cols_to_keep = [
 
 df_filtered = df[cols_to_keep]
 
-print(df.shape)
-print(df_filtered.shape)
+df_filtered.to_csv('filtered_data.csv', index=False)
