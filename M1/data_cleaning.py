@@ -1,7 +1,7 @@
 import pandas as pd
 import re
 
-df = pd.read_csv('M1/MERGED2023_24_PP.csv', low_memory=False)
+df = pd.read_csv('Most-Recent-Cohorts-Institution.csv', low_memory=False)
 
 columns = [
     'INSTNM', 'ADDR', 'CITY', 'STABBR', 'ZIP', 'UGDS', 'UG', 'UGDS_MEN',
@@ -14,7 +14,7 @@ columns = [
     'PELL_DEBT_MDN', 'NOPELL_DEBT_MDN', 'FEMALE_DEBT_MDN',
     'MALE_DEBT_MDN', 'FIRSTGEN_DEBT_MDN', 'NOTFIRSTGEN_DEBT_MDN',
     'GRAD_DEBT_MDN_SUPP', 'GRAD_DEBT_MDN10YR_SUPP', 'PLUS_DEBT_INST_MD', 
-    'PLUS_DEBT_ALL_MD'
+    'PLUS_DEBT_ALL_MD', 'PREDDEG', 'CONTROL', 'HBCU'
 ]
 
 
