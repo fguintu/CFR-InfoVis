@@ -1,8 +1,7 @@
 import pandas as pd
-import numpy as np
 
 # Read CSV and treat 'PS' and empty strings as NaN
-df = pd.read_csv('filtered_data.csv', low_memory=False, na_values=['PS', '', 'NULL', 'PrivacySuppressed'])
+df = pd.read_csv('data/filtered_data.csv', low_memory=False, na_values=['PS', '', 'NULL', 'PrivacySuppressed'])
 
 # Convert key columns to numeric
 numeric_cols = ['DEBT_MDN', 'GRAD_DEBT_MDN', 'WDRAW_DEBT_MDN', 'FEMALE_DEBT_MDN', 'MALE_DEBT_MDN',

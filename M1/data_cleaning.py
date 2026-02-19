@@ -1,7 +1,7 @@
 import pandas as pd
 import re
 
-df = pd.read_csv('Most-Recent-Cohorts-Institution.csv', low_memory=False)
+df = pd.read_csv('data/Most-Recent-Cohorts-Institution.csv', low_memory=False)
 
 columns = [
     'INSTNM', 'ADDR', 'CITY', 'STABBR', 'ZIP', 'UGDS', 'UG', 'UGDS_MEN',
@@ -35,4 +35,4 @@ cols_to_keep = [
 
 df_filtered = df[cols_to_keep]
 
-df_filtered.to_csv('filtered_data.csv', index=False)
+df_filtered.to_csv('data/filtered_data.csv', index=False)
