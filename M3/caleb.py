@@ -104,7 +104,10 @@ for year in male_earnings:
     ratio = female_mean / male_mean
     
     print(f"{year}: {ratio:.3f}")
+    print(f"Male: {male_mean:.2f}")
+    print(f"Female: {female_mean:.2f}")
     print("\n")
+
 
 
 #Completion rates across demographics
@@ -112,16 +115,6 @@ for year in male_earnings:
 print("=" * 60)
 print("COMPLETION RATES ACROSS DEMOGRAPHICS")
 print("=" * 60)
-
-#C150_4_WHITE, C150_L4_WHITE
-#C150_4_BLACK, C150_L4_BLACK
-#C150_4_HISP, C150_L4_HISP
-#C150_4_ASIAN, C150_L4_ASIAN
-#C150_4_AIAN, C150_L4_AIAN
-#C150_4_NHPI, C150_L4_NHPI
-#C150_4_2MOR, C150_L4_2MOR
-#C150_4_NRA, C150_L4_NRA
-#C150_4_UNKN, C150_L4_UNKN
 
 complete_4_year = {'White': 'C150_4_WHITE',
                    'Black': 'C150_4_BLACK',
