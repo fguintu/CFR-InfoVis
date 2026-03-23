@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Diploma Divide</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Source+Sans+Pro:wght@300;400;600;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Source Sans Pro',sans-serif;background:#0a0a0f;color:#e0e0e0;overflow-x:hidden}
+
+  /* Hero */
+  .hero{height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;background:linear-gradient(180deg,#0a0a0f 0%,#1a1a2e 50%,#0a0a0f 100%);position:relative}
+  .hero h1{font-family:'Playfair Display',serif;font-size:4.5rem;font-weight:900;background:linear-gradient(135deg,#f5c842,#e74c3c,#3498db);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:1rem}
+  .hero .subtitle{font-size:1.3rem;font-weight:300;color:#aaa;max-width:600px;line-height:1.6}
+  .hero .authors{margin-top:2rem;font-size:.9rem;color:#666}
+  .scroll-hint{position:absolute;bottom:40px;animation:bounce 2s infinite;color:#555;font-size:.85rem}
+  @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(10px)}}
+
+  /* Loading */
+  #loading{position:fixed;inset:0;background:#0a0a0f;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:9999;transition:opacity .5s}
+  #loading.done{opacity:0;pointer-events:none}
+  #loading .spinner{width:40px;height:40px;border:3px solid #222;border-top-color:#f5c842;border-radius:50%;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #loading p{margin-top:16px;color:#888;font-size:.9rem}
+
+  /* Sections */
+  .section{min-height:100vh;display:flex;align-items:center;padding:80px 5%;position:relative}
+  .section-inner{display:flex;gap:60px;max-width:1400px;margin:0 auto;width:100%;align-items:center}
+  .text-panel{flex:1;max-width:480px}
+  .vis-panel{flex:1.3;min-width:0}
+  .section-label{font-size:.75rem;text-transform:uppercase;letter-spacing:3px;color:#f5c842;margin-bottom:.75rem}
+  .text-panel h2{font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:700;margin-bottom:1rem;line-height:1.2}
+  .text-panel p{font-size:1.05rem;line-height:1.75;color:#bbb;margin-bottom:1rem}
+  .stat-callout{background:rgba(245,200,66,.08);border-left:3px solid #f5c842;padding:16px 20px;margin:1.2rem 0;font-size:1.1rem;color:#f5c842;font-weight:600}
+
+  /* Tooltip */
+  .tooltip{position:fixed;background:rgba(20,20,30,.95);border:1px solid #444;border-radius:6px;padding:10px 14px;font-size:.85rem;pointer-events:none;opacity:0;transition:opacity .15s;z-index:100;color:#ddd;max-width:260px}
+
+  /* SVG */
+  svg text{font-family:'Source Sans Pro',sans-serif}
+  .axis text{fill:#888;font-size:12px}
+  .axis line,.axis path{stroke:#333}
+
+  /* Legend */
+  .legend-container{display:flex;gap:20px;flex-wrap:wrap;margin-top:12px}
+  .legend-item{display:flex;align-items:center;gap:6px;font-size:.8rem;color:#999}
+  .legend-swatch{width:14px;height:14px;border-radius:3px}
+
+  /* Controls */
+  .controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+  .controls button{background:rgba(255,255,255,.06);border:1px solid #333;color:#bbb;padding:6px 16px;border-radius:20px;font-size:.8rem;cursor:pointer;transition:all .2s;font-family:'Source Sans Pro',sans-serif}
+  .controls button:hover{border-color:#f5c842;color:#f5c842}
+  .controls button.active{background:rgba(245,200,66,.15);border-color:#f5c842;color:#f5c842}
+
+  .divider{height:120px;display:flex;justify-content:center;align-items:center}
+  .divider span{display:block;width:60px;height:1px;background:linear-gradient(90deg,transparent,#333,transparent)}
+
+  .footer{text-align:center;padding:60px 20px;color:#555;font-size:.8rem;border-top:1px solid #1a1a1a}
+
+  .bee-circle{cursor:pointer;transition:opacity .2s}
+  .bee-circle:hover{stroke:#fff;stroke-width:2}
+  .car-group{cursor:pointer}
+  .car-group:hover .car-body{filter:brightness(1.3)}
+
+  @media(max-width:900px){
+    .section-inner{flex-direction:column}
+    .hero h1{font-size:2.8rem}
+    .text-panel{max-width:100%}
+  }
+</style>
+</head>
+<body>
+
+<div id="loading"><div class="spinner"></div><p>Loading College Scorecard data…</p></div>
+<div class="tooltip" id="tooltip"></div>
+
+<!-- HERO -->
+<section class="hero">
+  <h1>The Diploma Divide</h1>
+  <p class="subtitle">How College Debt and Earnings Reveal America's Education Inequality</p>
+  <p class="authors">By Frederic Guintu, Robert Jarman &amp; Caleb Jennings &nbsp;·&nbsp; CS 5/441</p>
+  <div class="scroll-hint">↓ Scroll to explore</div>
+</section>
+
+<!-- SECTION 1 -->
+<div class="divider"><span></span></div>
+<section class="section" id="sec1">
+  <div class="section-inner">
+    <div class="text-panel">
+      <div class="section-label">Part I</div>
+      <h2>Promise vs. Reality</h2>
+      <p>Not all diplomas carry the same financial weight. The gap between student debt and post-graduation earnings varies dramatically by institution type.</p>
+      <div class="stat-callout" id="callout1">Loading…</div>
+      <p>Compare median graduate debt against median earnings 6 years after enrollment. Toggle to see the debt-to-earnings ratio — higher ratios mean a heavier financial burden relative to what graduates earn.</p>
+    </div>
+    <div class="vis-panel">
+      <div class="controls" id="inst-controls">
+        <button class="active" data-view="grouped">Grouped</button>
+        <button data-view="ratio">Debt-to-Earnings Ratio</button>
+      </div>
+      <div id="vis-institution"></div>
+      <div class="legend-container">
+        <div class="legend-item"><div class="legend-swatch" style="background:#e74c3c"></div>Median Grad Debt</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:#3498db"></div>Median Earnings (6yr)</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 2 -->
+<div class="divider"><span></span></div>
+<section class="section" id="sec2">
+  <div class="section-inner">
+    <div class="text-panel">
+      <div class="section-label">Part II</div>
+      <h2>The Widening Gap</h2>
+      <p>Gender pay disparities don't just persist after college — they grow. Male and female graduates start at similar earnings levels but diverge steadily in the years following enrollment.</p>
+      <div class="stat-callout" id="callout2">Loading…</div>
+      <p>Track median earnings for men and women from 6 to 10 years post-enrollment. Toggle to see how many cents women earn per male dollar at each interval.</p>
+    </div>
+    <div class="vis-panel">
+      <div class="controls" id="gender-controls">
+        <button class="active" data-view="absolute">Earnings Over Time</button>
+        <button data-view="ratio">Women per $1 (Men)</button>
+      </div>
+      <div id="vis-gender"></div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 3 -->
+<div class="divider"><span></span></div>
+<section class="section" id="sec3">
+  <div class="section-inner">
+    <div class="text-panel">
+      <div class="section-label">Part III</div>
+      <h2>Crossing the Finish Line</h2>
+      <p>Before earnings enter the picture, completion rates reveal who actually reaches the finish line. Graduation rates at 4-year institutions vary substantially across racial demographics.</p>
+      <div class="stat-callout" id="callout3">Loading…</div>
+      <p>Each bar shows the median 150%-time completion rate at 4-year institutions for a given demographic. Hover for exact figures.</p>
+    </div>
+    <div class="vis-panel">
+      <div id="vis-completion"></div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 4 -->
+<div class="divider"><span></span></div>
+<section class="section" id="sec4">
+  <div class="section-inner">
+    <div class="text-panel">
+      <div class="section-label">Part IV</div>
+      <h2>[WORK IN PROGRESS] The Hurdle Race to Debt Free</h2>
+      <p>Combining debt burden with earnings paints a stark picture: some groups face a far longer road to paying off their education.</p>
+      <div class="stat-callout" id="callout4">Loading…</div>
+      <p>Distance from the finish line represents estimated years to repay, assuming 10% of earnings go toward debt each year. Cars closer to the center finish sooner. Click any car for details.</p>
+    </div>
+    <div class="vis-panel">
+      <div id="vis-racetrack"></div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 5 -->
+<div class="divider"><span></span></div>
+<section class="section" id="sec5">
+  <div class="section-inner">
+    <div class="text-panel">
+      <div class="section-label">Part V</div>
+      <h2>Every Institution Tells a Story</h2>
+      <p>Zooming out, the full landscape of debt-to-earnings ratios across thousands of colleges reveals systemic patterns by institution type.</p>
+      <div class="stat-callout" id="callout5">Loading…</div>
+      <p>Each circle is a real institution from the College Scorecard. Color encodes institution type, size encodes undergraduate enrollment. Filter by type or hover for details.</p>
+    </div>
+    <div class="vis-panel">
+      <div class="controls" id="bee-controls">
+        <button class="active" data-filter="all">All</button>
+        <button data-filter="1">Public</button>
+        <button data-filter="2">Private Nonprofit</button>
+        <button data-filter="3">For-Profit</button>
+        <button data-filter="hbcu">HBCU</button>
+      </div>
+      <div id="vis-beeswarm"></div>
+      <div class="legend-container">
+        <div class="legend-item"><div class="legend-swatch" style="background:#3498db"></div>Public</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:#f5c842"></div>Private Nonprofit</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:#e74c3c"></div>For-Profit</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:#9b59b6"></div>HBCU</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  Data Source: U.S. Department of Education College Scorecard (Most Recent Cohorts) &nbsp;·&nbsp; Built with D3.js<br>
+  CS 541 — Frederic Guintu, Robert Jarman, Caleb Jennings
+</footer>
+
+<script>
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+const tip = d3.select('#tooltip');
+function showTip(evt, html) {
+  tip.html(html).style('opacity',1)
+    .style('left',(evt.clientX+14)+'px')
+    .style('top',(evt.clientY-10)+'px');
+}
+function hideTip() { tip.style('opacity',0); }
+
+function safeNum(v) {
+  if (v === null || v === undefined || v === '' || v === 'PS' || v === 'PrivacySuppressed' || v === 'NULL') return NaN;
+  const n = +v;
+  return isNaN(n) ? NaN : n;
+}
+
+function median(arr) {
+  const sorted = arr.filter(v => !isNaN(v)).sort((a,b) => a - b);
+  if (!sorted.length) return NaN;
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid-1] + sorted[mid]) / 2;
+}
+
+function mean(arr) {
+  const valid = arr.filter(v => !isNaN(v));
+  return valid.length ? valid.reduce((s,v) => s+v, 0) / valid.length : NaN;
+}
+
+function fmt$(v) { return '$' + Math.round(v).toLocaleString(); }
+function fmtPct(v) { return (v * 100).toFixed(1) + '%'; }
+
+// ════════════════════════════════════════
+// LOAD & PARSE DATA
+// ════════════════════════════════════════
+Papa.parse('data/filtered_data.csv', {
+  download: true,
+  header: true,
+  skipEmptyLines: true,
+  dynamicTyping: false, // we handle typing ourselves to catch PS
+  complete: function(results) {
+    const raw = results.data;
+    // Parse into usable rows
+    const rows = raw.map(r => {
+      const o = {};
+      for (const k in r) { o[k] = r[k]; }
+      // Convert key fields
+      o._PREDDEG = safeNum(r.PREDDEG);
+      o._CONTROL = safeNum(r.CONTROL);
+      o._HBCU = safeNum(r.HBCU);
+      o._UGDS = safeNum(r.UGDS);
+      o._GRAD_DEBT_MDN = safeNum(r.GRAD_DEBT_MDN);
+      o._DEBT_MDN = safeNum(r.DEBT_MDN);
+      o._FEMALE_DEBT_MDN = safeNum(r.FEMALE_DEBT_MDN);
+      o._MALE_DEBT_MDN = safeNum(r.MALE_DEBT_MDN);
+      o._LO_INC_DEBT_MDN = safeNum(r.LO_INC_DEBT_MDN);
+      o._MD_INC_DEBT_MDN = safeNum(r.MD_INC_DEBT_MDN);
+      o._HI_INC_DEBT_MDN = safeNum(r.HI_INC_DEBT_MDN);
+      o._FIRSTGEN_DEBT_MDN = safeNum(r.FIRSTGEN_DEBT_MDN);
+      o._UGDS_BLACK = safeNum(r.UGDS_BLACK);
+      o._UGDS_WHITE = safeNum(r.UGDS_WHITE);
+      o._UGDS_HISP = safeNum(r.UGDS_HISP);
+      // Earnings at various years after entry
+      for (let yr = 6; yr <= 10; yr++) {
+        o[`_EARN_P${yr}`] = safeNum(r[`MD_EARN_WNE_P${yr}`]);
+        o[`_EARN_MALE_P${yr}`] = safeNum(r[`MD_EARN_WNE_MALE1_P${yr}`]);
+        o[`_EARN_FEMALE_P${yr}`] = safeNum(r[`MD_EARN_WNE_MALE0_P${yr}`]);
+      }
+      o._EARN_1YR = safeNum(r.MD_EARN_WNE_1YR);
+      // Completion rates (150% time, 4-year institutions)
+      o._C150_WHITE = safeNum(r.C150_4_WHITE);
+      o._C150_BLACK = safeNum(r.C150_4_BLACK);
+      o._C150_HISP = safeNum(r.C150_4_HISP);
+      o._C150_ASIAN = safeNum(r.C150_4_ASIAN);
+      o._C150_AIAN = safeNum(r.C150_4_AIAN);
+      o._C150_NHPI = safeNum(r.C150_4_NHPI);
+      o._C150_2MOR = safeNum(r.C150_4_2MOR);
+      o._C150_4 = safeNum(r.C150_4);
+      return o;
+    });
+
+    document.getElementById('loading').classList.add('done');
+    buildAll(rows);
+  }
+});
+
+function buildAll(rows) {
+  // ── Subsets ──
+  const cc = rows.filter(r => r._PREDDEG === 2);
+  const fourYr = rows.filter(r => r._PREDDEG === 3);
+  const pub4 = rows.filter(r => r._CONTROL === 1 && r._PREDDEG === 3);
+  const priv4 = rows.filter(r => r._CONTROL === 2 && r._PREDDEG === 3);
+  const fp4 = rows.filter(r => r._CONTROL === 3 && r._PREDDEG === 3);
+  const hbcus = rows.filter(r => r._HBCU === 1);
+  const pub = rows.filter(r => r._CONTROL === 1);
+  const privNP = rows.filter(r => r._CONTROL === 2);
+  const forProfit = rows.filter(r => r._CONTROL === 3);
+
+  // ════════════════════════════════════════
+  // SECTION 1: Institution Type — Debt vs Earnings
+  // ════════════════════════════════════════
+  const instData = [
+    { type:'Community\nCollege', label:'Community College',
+      debt: median(cc.map(r=>r._GRAD_DEBT_MDN)),
+      earn: median(cc.map(r=>r._EARN_P6)) },
+    { type:'Public\n4-Year', label:'Public 4-Year',
+      debt: median(pub4.map(r=>r._GRAD_DEBT_MDN)),
+      earn: median(pub4.map(r=>r._EARN_P6)) },
+    { type:'Private\nNonprofit', label:'Private Nonprofit',
+      debt: median(priv4.map(r=>r._GRAD_DEBT_MDN)),
+      earn: median(priv4.map(r=>r._EARN_P6)) },
+    { type:'Private\nFor-Profit', label:'Private For-Profit',
+      debt: median(fp4.map(r=>r._GRAD_DEBT_MDN)),
+      earn: median(fp4.map(r=>r._EARN_P6)) },
+    { type:'HBCU', label:'HBCU',
+      debt: median(hbcus.map(r=>r._GRAD_DEBT_MDN)),
+      earn: median(hbcus.map(r=>r._EARN_P6)) }
+  ].filter(d => !isNaN(d.debt) && !isNaN(d.earn));
+
+  // Callout
+  const pub4Debt = instData.find(d=>d.label==='Public 4-Year');
+  const privDebt = instData.find(d=>d.label==='Private Nonprofit');
+  if (pub4Debt && privDebt) {
+    document.getElementById('callout1').textContent =
+      `Private nonprofit graduates carry a median debt of ${fmt$(privDebt.debt)} vs ${fmt$(pub4Debt.debt)} at public 4-year schools — but earn ${fmt$(privDebt.earn)} vs ${fmt$(pub4Debt.earn)} six years out.`;
+  }
+
+  drawSection1(instData);
+
+  // ════════════════════════════════════════
+  // SECTION 2: Gender Earnings Over Time
+  // ════════════════════════════════════════
+  const genderData = [];
+  for (let yr = 6; yr <= 10; yr++) {
+    const m = median(rows.map(r => r[`_EARN_MALE_P${yr}`]));
+    const f = median(rows.map(r => r[`_EARN_FEMALE_P${yr}`]));
+    if (!isNaN(m) && !isNaN(f)) genderData.push({ yr, male: m, female: f });
+  }
+
+  if (genderData.length) {
+    const last = genderData[genderData.length - 1];
+    const ratio = (last.female / last.male);
+    document.getElementById('callout2').textContent =
+      `By ${last.yr} years after enrollment, women earn ~${fmt$(last.female)} vs ${fmt$(last.male)} for men — roughly $${(ratio).toFixed(2)} for every dollar men earn.`;
+  }
+
+  drawSection2(genderData);
+
+  // ════════════════════════════════════════
+  // SECTION 3: Completion Rates by Race
+  // ════════════════════════════════════════
+  const compRaces = [
+    { race:'White', key:'_C150_WHITE', color:'#3498db' },
+    { race:'Black', key:'_C150_BLACK', color:'#e74c3c' },
+    { race:'Hispanic', key:'_C150_HISP', color:'#f5c842' },
+    { race:'Asian', key:'_C150_ASIAN', color:'#2ecc71' },
+    { race:'AIAN', key:'_C150_AIAN', color:'#e67e22' },
+    { race:'NHPI', key:'_C150_NHPI', color:'#1abc9c' },
+    { race:'Two+', key:'_C150_2MOR', color:'#9b59b6' }
+  ];
+  const completionData = compRaces.map(c => {
+    const vals = fourYr.map(r => r[c.key]);
+    return { race: c.race, rate: median(vals), color: c.color };
+  }).filter(d => !isNaN(d.rate));
+
+  if (completionData.length >= 2) {
+    const best = completionData.reduce((a,b) => a.rate > b.rate ? a : b);
+    const worst = completionData.reduce((a,b) => a.rate < b.rate ? a : b);
+    document.getElementById('callout3').textContent =
+      `${best.race} students complete at ~${fmtPct(best.rate)}, while ${worst.race} students complete at ~${fmtPct(worst.rate)}.`;
+  }
+
+  drawSection3(completionData);
+
+  // ════════════════════════════════════════
+  // SECTION 4: Racetrack (Debt groups → est years to repay)
+  // ════════════════════════════════════════
+  // Use income-based debt + overall earnings to estimate repayment time
+  // Assume 10% of median earnings go to repayment each year
+  function estYears(debtArr, earnArr) {
+    const d = median(debtArr);
+    const e = median(earnArr);
+    if (isNaN(d) || isNaN(e) || e <= 0) return NaN;
+    return d / (e * 0.10);
+  }
+
+  const racetrack = [
+    { id:'A', label:'High Income', color:'#3498db',
+      debt: median(rows.map(r=>r._HI_INC_DEBT_MDN)),
+      earn: median(rows.map(r=>r._EARN_P6)),
+      years: estYears(rows.map(r=>r._HI_INC_DEBT_MDN), rows.map(r=>r._EARN_P6)) },
+    { id:'B', label:'Middle Income', color:'#f5c842',
+      debt: median(rows.map(r=>r._MD_INC_DEBT_MDN)),
+      earn: median(rows.map(r=>r._EARN_P6)),
+      years: estYears(rows.map(r=>r._MD_INC_DEBT_MDN), rows.map(r=>r._EARN_P6)) },
+    { id:'C', label:'Low Income', color:'#e74c3c',
+      debt: median(rows.map(r=>r._LO_INC_DEBT_MDN)),
+      earn: median(rows.map(r=>r._EARN_P6)),
+      years: estYears(rows.map(r=>r._LO_INC_DEBT_MDN), rows.map(r=>r._EARN_P6)) },
+    { id:'D', label:'First-Gen', color:'#9b59b6',
+      debt: median(rows.map(r=>r._FIRSTGEN_DEBT_MDN)),
+      earn: median(rows.map(r=>r._EARN_P6)),
+      years: estYears(rows.map(r=>r._FIRSTGEN_DEBT_MDN), rows.map(r=>r._EARN_P6)) }
+  ].filter(d => !isNaN(d.years));
+
+  if (racetrack.length) {
+    const slowest = racetrack.reduce((a,b) => a.years > b.years ? a : b);
+    const fastest = racetrack.reduce((a,b) => a.years < b.years ? a : b);
+    document.getElementById('callout4').textContent =
+      `At 10% of earnings toward repayment, ${fastest.label} graduates could be debt-free in ~${fastest.years.toFixed(0)} years, while ${slowest.label} borrowers face ~${slowest.years.toFixed(0)} years.`;
+  }
+
+  drawSection4(racetrack);
+
+  // ════════════════════════════════════════
+  // SECTION 5: Beeswarm — real institutions
+  // ════════════════════════════════════════
+  const beeRaw = rows.filter(r =>
+    !isNaN(r._GRAD_DEBT_MDN) && !isNaN(r._EARN_P6) && r._EARN_P6 > 0 && !isNaN(r._UGDS) && r._UGDS > 0
+  ).map(r => ({
+    name: r.INSTNM || 'Unknown',
+    control: r._CONTROL,
+    hbcu: r._HBCU,
+    ratio: r._GRAD_DEBT_MDN / r._EARN_P6,
+    ug: r._UGDS,
+    debt: r._GRAD_DEBT_MDN,
+    earn: r._EARN_P6
+  }));
+
+  // Cap outliers for display
+  const beeData = beeRaw.filter(d => d.ratio < 3 && d.ratio > 0);
+
+  const nPub = beeData.filter(d=>d.control===1).length;
+  const nPriv = beeData.filter(d=>d.control===2).length;
+  const nFP = beeData.filter(d=>d.control===3).length;
+  const nHBCU = beeData.filter(d=>d.hbcu===1).length;
+  document.getElementById('callout5').textContent =
+    `Showing ${beeData.length} institutions: ${nPub} public, ${nPriv} private nonprofit, ${nFP} for-profit, and ${nHBCU} HBCUs.`;
+
+  drawSection5(beeData);
+}
+
+// ════════════════════════════════════════
+// DRAW FUNCTIONS
+// ════════════════════════════════════════
+
+function drawSection1(data) {
+  const W=640,H=400,M={t:30,r:30,b:70,l:65};
+  const w=W-M.l-M.r, h=H-M.t-M.b;
+  const svg=d3.select('#vis-institution').append('svg').attr('viewBox',`0 0 ${W} ${H}`).attr('width','100%');
+  const g=svg.append('g').attr('transform',`translate(${M.l},${M.t})`);
+
+  const x0=d3.scaleBand().domain(data.map(d=>d.type)).range([0,w]).padding(.3);
+  const x1=d3.scaleBand().domain(['debt','earn']).range([0,x0.bandwidth()]).padding(.08);
+  const maxVal=d3.max(data,d=>Math.max(d.debt,d.earn))*1.15;
+  const y=d3.scaleLinear().domain([0,maxVal]).range([h,0]);
+
+  const xAxisG=g.append('g').attr('transform',`translate(0,${h})`);
+  const yAxisG=g.append('g');
+
+  function drawGrouped(){
+    y.domain([0,maxVal]);
+    xAxisG.transition().duration(500).call(d3.axisBottom(x0).tickSize(0))
+      .selectAll('text').attr('fill','#888').style('font-size','11px')
+      .each(function(d){const el=d3.select(this);el.text('');d.split('\n').forEach((p,i)=>el.append('tspan').attr('x',0).attr('dy',i?'1.1em':0).text(p))});
+    yAxisG.transition().duration(500).call(d3.axisLeft(y).ticks(6).tickFormat(d=>`$${d/1000}K`)).selectAll('text').attr('fill','#888');
+    xAxisG.select('.domain').attr('stroke','#333');yAxisG.select('.domain').attr('stroke','#333');
+
+    g.selectAll('.ratio-bar,.ratio-label').remove();
+
+    const groups=g.selectAll('.bar-group').data(data,d=>d.type);
+    const enter=groups.enter().append('g').attr('class','bar-group').attr('transform',d=>`translate(${x0(d.type)},0)`);
+    enter.append('rect').attr('class','bar-debt').attr('x',x1('debt')).attr('width',x1.bandwidth()).attr('rx',3).attr('fill','#e74c3c')
+      .on('mouseover',(e,d)=>showTip(e,`<b>${d.label}</b><br>Median Grad Debt: ${fmt$(d.debt)}`)).on('mouseout',hideTip);
+    enter.append('rect').attr('class','bar-earn').attr('x',x1('earn')).attr('width',x1.bandwidth()).attr('rx',3).attr('fill','#3498db')
+      .on('mouseover',(e,d)=>showTip(e,`<b>${d.label}</b><br>Median Earnings (6yr): ${fmt$(d.earn)}`)).on('mouseout',hideTip);
+
+    const merged=enter.merge(groups);
+    merged.select('.bar-debt').transition().duration(700).attr('y',d=>y(d.debt)).attr('height',d=>h-y(d.debt));
+    merged.select('.bar-earn').transition().duration(700).attr('y',d=>y(d.earn)).attr('height',d=>h-y(d.earn));
+  }
+
+  function drawRatio(){
+    const ratios=data.map(d=>({...d,ratio:d.debt/d.earn}));
+    const maxR=d3.max(ratios,d=>d.ratio)*1.2;
+    y.domain([0,maxR]);
+    yAxisG.transition().duration(500).call(d3.axisLeft(y).ticks(5).tickFormat(d3.format('.0%'))).selectAll('text').attr('fill','#888');
+    g.selectAll('.bar-debt,.bar-earn').transition().duration(300).attr('height',0).attr('y',h);
+    const color=d3.scaleSequential(d3.interpolateRdYlGn).domain([maxR,0]);
+    const rBars=g.selectAll('.ratio-bar').data(ratios,d=>d.type);
+    rBars.enter().append('rect').attr('class','ratio-bar')
+      .attr('x',d=>x0(d.type)+x0.bandwidth()*.15).attr('width',x0.bandwidth()*.7).attr('rx',3)
+      .attr('y',h).attr('height',0)
+      .on('mouseover',(e,d)=>showTip(e,`<b>${d.label}</b><br>Debt/Earnings: ${fmtPct(d.ratio)}`)).on('mouseout',hideTip)
+      .merge(rBars).transition().duration(700)
+      .attr('y',d=>y(d.ratio)).attr('height',d=>h-y(d.ratio)).attr('fill',d=>color(d.ratio));
+
+    const labels=g.selectAll('.ratio-label').data(ratios,d=>d.type);
+    labels.enter().append('text').attr('class','ratio-label')
+      .attr('x',d=>x0(d.type)+x0.bandwidth()/2).attr('text-anchor','middle').attr('fill','#fff').attr('font-size','13px').attr('font-weight','600')
+      .merge(labels).transition().duration(700).attr('y',d=>y(d.ratio)-8).attr('opacity',1)
+      .tween('text',function(d){const i=d3.interpolateNumber(0,d.ratio*100);return t=>{d3.select(this).text(i(t).toFixed(0)+'%')}});
+  }
+
+  drawGrouped();
+  d3.select('#inst-controls').selectAll('button').on('click',function(){
+    d3.select('#inst-controls').selectAll('button').classed('active',false);
+    d3.select(this).classed('active',true);
+    d3.select(this).attr('data-view')==='grouped'?drawGrouped():drawRatio();
+  });
+}
+
+function drawSection2(data) {
+  if(!data.length)return;
+  const W=640,H=380,M={t:30,r:50,b:50,l:65};
+  const w=W-M.l-M.r, h=H-M.t-M.b;
+  const svg=d3.select('#vis-gender').append('svg').attr('viewBox',`0 0 ${W} ${H}`).attr('width','100%');
+  const g=svg.append('g').attr('transform',`translate(${M.l},${M.t})`);
+  const x=d3.scaleLinear().domain([d3.min(data,d=>d.yr),d3.max(data,d=>d.yr)]).range([0,w]);
+  const yAbs=d3.scaleLinear().domain([0,d3.max(data,d=>d.male)*1.15]).range([h,0]);
+  const ratioData=data.map(d=>({yr:d.yr,ratio:d.female/d.male}));
+  const yRat=d3.scaleLinear().domain([0,1.1]).range([h,0]);
+  const xAxisG=g.append('g').attr('transform',`translate(0,${h})`);
+  const yAxisG=g.append('g');
+  const linesG=g.append('g');
+
+  function drawAbsolute(){
+    xAxisG.transition().duration(500).call(d3.axisBottom(x).ticks(data.length).tickFormat(d=>d+' yr'));
+    yAxisG.transition().duration(500).call(d3.axisLeft(yAbs).ticks(6).tickFormat(d=>`$${d/1000}K`));
+    [xAxisG,yAxisG].forEach(a=>{a.selectAll('text').attr('fill','#888');a.select('.domain').attr('stroke','#333')});
+    linesG.selectAll('*').remove();
+    const lineM=d3.line().x(d=>x(d.yr)).y(d=>yAbs(d.male)).curve(d3.curveMonotoneX);
+    const lineF=d3.line().x(d=>x(d.yr)).y(d=>yAbs(d.female)).curve(d3.curveMonotoneX);
+    const area=d3.area().x(d=>x(d.yr)).y0(d=>yAbs(d.female)).y1(d=>yAbs(d.male)).curve(d3.curveMonotoneX);
+    linesG.append('path').datum(data).attr('d',area).attr('fill','rgba(231,76,60,.12)');
+    linesG.append('path').datum(data).attr('d',lineM).attr('fill','none').attr('stroke','#3498db').attr('stroke-width',3);
+    linesG.append('path').datum(data).attr('d',lineF).attr('fill','none').attr('stroke','#e74c3c').attr('stroke-width',3);
+    data.forEach(d=>{
+      linesG.append('circle').attr('cx',x(d.yr)).attr('cy',yAbs(d.male)).attr('r',5).attr('fill','#3498db').attr('stroke','#0a0a0f').attr('stroke-width',2)
+        .on('mouseover',e=>showTip(e,`<b>${d.yr} Yrs Post-Entry</b><br>Men: ${fmt$(d.male)}<br>Women: ${fmt$(d.female)}<br>Gap: ${fmt$(d.male-d.female)}`)).on('mouseout',hideTip);
+      linesG.append('circle').attr('cx',x(d.yr)).attr('cy',yAbs(d.female)).attr('r',5).attr('fill','#e74c3c').attr('stroke','#0a0a0f').attr('stroke-width',2)
+        .on('mouseover',e=>showTip(e,`<b>${d.yr} Yrs Post-Entry</b><br>Men: ${fmt$(d.male)}<br>Women: ${fmt$(d.female)}<br>Gap: ${fmt$(d.male-d.female)}`)).on('mouseout',hideTip);
+    });
+    const last=data[data.length-1];
+    linesG.append('line').attr('x1',x(last.yr)+12).attr('x2',x(last.yr)+12)
+      .attr('y1',yAbs(last.male)).attr('y2',yAbs(last.female)).attr('stroke','#e74c3c').attr('stroke-width',1.5).attr('stroke-dasharray','4,3');
+    linesG.append('text').attr('x',x(last.yr)+20).attr('y',(yAbs(last.male)+yAbs(last.female))/2+4)
+      .attr('fill','#e74c3c').attr('font-size','12px').attr('font-weight','600').text(`${fmt$(last.male-last.female)} gap`);
+    linesG.append('text').attr('x',w+8).attr('y',yAbs(last.male)+4).attr('fill','#3498db').attr('font-size','12px').attr('font-weight','600').text('Men');
+    linesG.append('text').attr('x',w+8).attr('y',yAbs(last.female)+4).attr('fill','#e74c3c').attr('font-size','12px').attr('font-weight','600').text('Women');
+  }
+
+  function drawRatioView(){
+    xAxisG.transition().duration(500).call(d3.axisBottom(x).ticks(data.length).tickFormat(d=>d+' yr'));
+    yAxisG.transition().duration(500).call(d3.axisLeft(yRat).ticks(5).tickFormat(d=>`$${d.toFixed(2)}`));
+    [xAxisG,yAxisG].forEach(a=>{a.selectAll('text').attr('fill','#888');a.select('.domain').attr('stroke','#333')});
+    linesG.selectAll('*').remove();
+    linesG.append('line').attr('x1',0).attr('x2',w).attr('y1',yRat(1)).attr('y2',yRat(1)).attr('stroke','#444').attr('stroke-dasharray','6,4');
+    linesG.append('text').attr('x',w-4).attr('y',yRat(1)-8).attr('text-anchor','end').attr('fill','#666').attr('font-size','11px').text('$1.00 = parity');
+    const line=d3.line().x(d=>x(d.yr)).y(d=>yRat(d.ratio)).curve(d3.curveMonotoneX);
+    linesG.append('path').datum(ratioData).attr('d',line).attr('fill','none').attr('stroke','#f5c842').attr('stroke-width',3);
+    ratioData.forEach(d=>{
+      linesG.append('circle').attr('cx',x(d.yr)).attr('cy',yRat(d.ratio)).attr('r',6).attr('fill','#f5c842').attr('stroke','#0a0a0f').attr('stroke-width',2)
+        .on('mouseover',e=>showTip(e,`<b>${d.yr} Yrs Post-Entry</b><br>Women earn $${d.ratio.toFixed(2)} per $1 men earn`)).on('mouseout',hideTip);
+    });
+  }
+
+  drawAbsolute();
+  d3.select('#gender-controls').selectAll('button').on('click',function(){
+    d3.select('#gender-controls').selectAll('button').classed('active',false);
+    d3.select(this).classed('active',true);
+    d3.select(this).attr('data-view')==='absolute'?drawAbsolute():drawRatioView();
+  });
+}
+
+function drawSection3(data) {
+  if(!data.length)return;
+  const W=640,H=400,M={t:20,r:20,b:50,l:55};
+  const w=W-M.l-M.r, h=H-M.t-M.b;
+  const svg=d3.select('#vis-completion').append('svg').attr('viewBox',`0 0 ${W} ${H}`).attr('width','100%');
+  const g=svg.append('g').attr('transform',`translate(${M.l},${M.t})`);
+  const x=d3.scaleBand().domain(data.map(d=>d.race)).range([0,w]).padding(.25);
+  const y=d3.scaleLinear().domain([0,1]).range([h,0]);
+  g.append('g').attr('transform',`translate(0,${h})`).call(d3.axisBottom(x).tickSize(0)).selectAll('text').attr('fill','#888').style('font-size','12px');
+  g.append('g').call(d3.axisLeft(y).ticks(5).tickFormat(d3.format('.0%'))).selectAll('text').attr('fill','#888');
+  g.selectAll('.domain').attr('stroke','#333');
+  g.append('g').selectAll('line').data(y.ticks(5)).enter().append('line')
+    .attr('x1',0).attr('x2',w).attr('y1',d=>y(d)).attr('y2',d=>y(d)).attr('stroke','#1a1a2e').attr('stroke-dasharray','2,4');
+  g.selectAll('.comp-bar').data(data).enter().append('rect')
+    .attr('x',d=>x(d.race)).attr('width',x.bandwidth()).attr('y',h).attr('height',0)
+    .attr('fill',d=>d.color).attr('rx',4).attr('opacity',.85)
+    .on('mouseover',function(e,d){d3.select(this).attr('opacity',1);showTip(e,`<b>${d.race}</b><br>150% Completion: ${fmtPct(d.rate)}`)})
+    .on('mouseout',function(){d3.select(this).attr('opacity',.85);hideTip()})
+    .transition().duration(800).delay((_,i)=>i*100)
+    .attr('y',d=>y(d.rate)).attr('height',d=>h-y(d.rate));
+  g.selectAll('.comp-label').data(data).enter().append('text')
+    .attr('x',d=>x(d.race)+x.bandwidth()/2).attr('y',d=>y(d.rate)-8)
+    .attr('text-anchor','middle').attr('fill','#ddd').attr('font-size','13px').attr('font-weight','600')
+    .attr('opacity',0).text(d=>fmtPct(d.rate))
+    .transition().duration(800).delay((_,i)=>i*100+400).attr('opacity',1);
+}
+
+function drawSection4(data) {
+  if(!data.length)return;
+  const W=640,H=460,cx=W/2,cy=H/2;
+  const svg=d3.select('#vis-racetrack').append('svg').attr('viewBox',`0 0 ${W} ${H}`).attr('width','100%');
+  const maxYears=d3.max(data,d=>d.years)*1.3;
+  const trackScale=d3.scaleLinear().domain([0,maxYears]).range([60,200]);
+
+  for(let i=0;i<=maxYears;i+=5){
+    const rx=trackScale(i)*1.4,ry=trackScale(i);
+    svg.append('ellipse').attr('cx',cx).attr('cy',cy).attr('rx',rx).attr('ry',ry)
+      .attr('fill','none').attr('stroke','#1a1a2e').attr('stroke-width',1);
+  }
+  svg.append('line').attr('x1',cx).attr('x2',cx).attr('y1',cy-55).attr('y2',cy+55)
+    .attr('stroke','#444').attr('stroke-width',2).attr('stroke-dasharray','6,4');
+  svg.append('text').attr('x',cx).attr('y',cy-62).attr('text-anchor','middle').attr('fill','#888').attr('font-size','11px').attr('font-weight','600').text('FINISH: DEBT FREE');
+
+  const angles=data.map((_,i)=>-0.3-i*0.9);
+  data.forEach((d,i)=>{
+    const rx=trackScale(d.years)*1.4,ry=trackScale(d.years);
+    const a=angles[i];
+    const px=cx+rx*Math.cos(a),py=cy+ry*Math.sin(a);
+    const car=svg.append('g').attr('class','car-group').attr('transform',`translate(${px},${py})`)
+      .on('mouseover',e=>showTip(e,`<b>${d.label}</b><br>Median Debt: ${fmt$(d.debt)}<br>Median Earnings (6yr): ${fmt$(d.earn)}<br>Est. Years to Repay: ~${d.years.toFixed(1)}`))
+      .on('mouseout',hideTip);
+    car.append('rect').attr('class','car-body').attr('x',-18).attr('y',-10).attr('width',36).attr('height',20).attr('rx',8).attr('fill',d.color);
+    car.append('text').attr('text-anchor','middle').attr('y',5).attr('fill','#fff').attr('font-size','12px').attr('font-weight','700').text(d.id);
+    const lY=py<cy?-24:28;
+    car.append('text').attr('text-anchor','middle').attr('y',lY).attr('fill',d.color).attr('font-size','11px').attr('font-weight','600').text(d.label);
+    car.append('text').attr('text-anchor','middle').attr('y',lY+14).attr('fill','#888').attr('font-size','10px').text(`~${d.years.toFixed(0)} yrs`);
+  });
+  svg.append('text').attr('x',cx).attr('y',cy+4).attr('text-anchor','middle').attr('fill','#555').attr('font-size','10px').text('Closer = Faster');
+}
+
+function drawSection5(data) {
+  if(!data.length)return;
+  const W=680,H=400,M={t:20,r:20,b:50,l:20};
+  const w=W-M.l-M.r, h=H-M.t-M.b;
+  const svg=d3.select('#vis-beeswarm').append('svg').attr('viewBox',`0 0 ${W} ${H}`).attr('width','100%');
+  const g=svg.append('g').attr('transform',`translate(${M.l},${M.t})`);
+
+  const xMax=d3.quantile(data.map(d=>d.ratio).sort((a,b)=>a-b),0.95)||1.5;
+  const x=d3.scaleLinear().domain([0,xMax]).range([0,w]);
+  const r=d3.scaleSqrt().domain([0,d3.quantile(data.map(d=>d.ug).sort((a,b)=>a-b),0.95)||30000]).range([2,9]).clamp(true);
+  const colors={1:'#3498db',2:'#f5c842',3:'#e74c3c'};
+  const typeLabels={1:'Public',2:'Private Nonprofit',3:'For-Profit'};
+
+  g.append('g').attr('transform',`translate(0,${h})`).call(d3.axisBottom(x).ticks(6).tickFormat(d3.format('.0%'))).selectAll('text').attr('fill','#888');
+  g.select('.domain').attr('stroke','#333');
+  g.append('text').attr('x',w/2).attr('y',h+40).attr('text-anchor','middle').attr('fill','#666').attr('font-size','12px').text('Debt-to-Earnings Ratio');
+
+  // Jitter y positions
+  data.forEach(d=>{
+    d.px=x(Math.min(d.ratio,xMax));
+    d.py=h/2+(Math.random()-.5)*h*.75;
+    d.pr=r(d.ug);
+  });
+
+  function getColor(d){ return d.hbcu===1?'#9b59b6':colors[d.control]||'#666'; }
+  function getTypeLabel(d){ return d.hbcu===1?'HBCU':typeLabels[d.control]||'Unknown'; }
+
+  const circles=g.selectAll('.bee-circle').data(data).enter().append('circle').attr('class','bee-circle')
+    .attr('cx',d=>d.px).attr('cy',d=>d.py).attr('r',d=>d.pr)
+    .attr('fill',d=>getColor(d)).attr('opacity',.6)
+    .on('mouseover',function(e,d){
+      d3.select(this).attr('opacity',1).attr('stroke','#fff').attr('stroke-width',2);
+      showTip(e,`<b>${d.name}</b><br>Type: ${getTypeLabel(d)}<br>Debt/Earnings: ${fmtPct(d.ratio)}<br>Debt: ${fmt$(d.debt)}<br>Earnings: ${fmt$(d.earn)}<br>Enrollment: ${d.ug.toLocaleString()}`);
+    })
+    .on('mouseout',function(){d3.select(this).attr('opacity',.6).attr('stroke','none');hideTip()});
+
+  d3.select('#bee-controls').selectAll('button').on('click',function(){
+    d3.select('#bee-controls').selectAll('button').classed('active',false);
+    d3.select(this).classed('active',true);
+    const f=d3.select(this).attr('data-filter');
+    circles.transition().duration(400)
+      .attr('opacity',d=>{
+        if(f==='all') return .6;
+        if(f==='hbcu') return d.hbcu===1?.7:.04;
+        return d.control===+f?.7:.04;
+      })
+      .attr('r',d=>{
+        if(f==='all') return d.pr;
+        if(f==='hbcu') return d.hbcu===1?d.pr:d.pr*.4;
+        return d.control===+f?d.pr:d.pr*.4;
+      });
+  });
+}
+</script>
+</body>
+</html>
