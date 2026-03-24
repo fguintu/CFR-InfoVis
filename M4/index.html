@@ -226,7 +226,13 @@ const C={red:'#b33',blue:'#2a6496',gold:'#b8860b',green:'#3a7d44',orange:'#c4651
 // ════════════════════════════════
 Papa.parse('data/filtered_data.csv',{
   download:true,header:true,skipEmptyLines:true,dynamicTyping:false,
+  error:function(err){
+    console.error('CSV load error:',err);
+    document.getElementById('loading').innerHTML='<p style="color:#b33">Error loading data. Check console.</p>';
+  },
   complete:function(res){
+    console.log('CSV loaded:',res.data.length,'rows,',Object.keys(res.data[0]||{}).length,'columns');
+    console.log('First row:',res.data[0]);
     const rows=res.data.map(r=>{
       const o={...r};
       o._PREDDEG=safeNum(r.PREDDEG);o._CONTROL=safeNum(r.CONTROL);o._HBCU=safeNum(r.HBCU);
