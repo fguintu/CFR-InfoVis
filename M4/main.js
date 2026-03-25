@@ -20,7 +20,20 @@ Papa.parse("data/filtered_data.csv", {
   header: true,
   skipEmptyLines: true,
   dynamicTyping: false,
+  error: function (err) {
+    console.error("CSV load error:", err);
+    document.getElementById("loading").innerHTML =
+      '<p style="color:#b33">Error loading data. Check console.</p>';
+  },
   complete: function (res) {
+    console.log(
+      "CSV loaded:",
+      res.data.length,
+      "rows,",
+      Object.keys(res.data[0] || {}).length,
+      "columns",
+    );
+    console.log("First row:", res.data[0]);
     const rows = res.data.map((r) => {
       const o = { ...r };
       o._PREDDEG = safeNum(r.PREDDEG);
