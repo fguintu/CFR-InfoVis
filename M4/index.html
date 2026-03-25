@@ -1,570 +1,230 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Diploma Divide</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-html{scroll-snap-type:y mandatory;scroll-behavior:smooth}
-body{font-family:Georgia,'Times New Roman',serif;background:#faf8f4;color:#1a1a1a;overflow-x:hidden}
-
-/* Loading */
-#loading{position:fixed;inset:0;background:#faf8f4;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:9999;transition:opacity .6s}
-#loading.done{opacity:0;pointer-events:none}
-#loading .bar{width:180px;height:2px;background:#ddd;overflow:hidden}
-#loading .bar-fill{height:100%;background:#8b2500;animation:loadbar 1.8s ease-in-out infinite}
-@keyframes loadbar{0%{width:0}50%{width:75%}100%{width:100%}}
-#loading p{margin-top:14px;color:#888;font-size:.7rem;font-family:Helvetica,Arial,sans-serif;letter-spacing:1px;text-transform:uppercase}
-
-.snap{min-height:100vh;scroll-snap-align:start;scroll-snap-stop:always;display:flex;align-items:center;justify-content:center;position:relative}
-
-/* Hero */
-.hero-bg{background:#1a1a1a;flex-direction:column;text-align:center;padding:0 24px}
-.hero-bg h1{font-size:3.8rem;font-weight:400;color:#faf8f4;letter-spacing:-.02em;line-height:1.1;opacity:0;transform:translateY(30px);animation:fadeUp .8s .2s forwards}
-.hero-bg .rule{width:60px;height:1px;background:#8b2500;margin:28px auto;opacity:0;animation:fadeIn .6s .6s forwards}
-.hero-bg .sub{font-size:1.15rem;color:#a0998e;font-style:italic;max-width:560px;line-height:1.6;opacity:0;animation:fadeUp .8s .8s forwards}
-.hero-bg .byline{margin-top:36px;font-size:.75rem;color:#5a5550;font-family:Helvetica,Arial,sans-serif;letter-spacing:1.5px;text-transform:uppercase;opacity:0;animation:fadeIn .6s 1.2s forwards}
-.hero-bg .scroll-cue{position:absolute;bottom:32px;color:#5a5550;font-size:.7rem;font-family:Helvetica,Arial,sans-serif;letter-spacing:1px;text-transform:uppercase;opacity:0;animation:fadeIn .6s 1.6s forwards}
-.hero-bg .scroll-cue span{display:block;margin-top:6px;animation:nudge 2.5s infinite}
-@keyframes nudge{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
-@keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
-@keyframes fadeIn{to{opacity:1}}
-
-/* Sections */
-.content-section{padding:60px 6%;background:#faf8f4}
-.content-section:nth-child(odd){background:#f4f1eb}
-.section-inner{display:flex;gap:48px;max-width:1200px;margin:0 auto;width:100%;align-items:center}
-.text-col{flex:1;max-width:460px}
-.vis-col{flex:1.4;min-width:0}
-
-/* Type */
-.kicker{font-family:Helvetica,Arial,sans-serif;font-size:.65rem;text-transform:uppercase;letter-spacing:2.5px;color:#8b2500;margin-bottom:10px;font-weight:700}
-.text-col h2{font-size:2rem;font-weight:400;line-height:1.2;margin-bottom:16px;letter-spacing:-.01em}
-.text-col p{font-size:.95rem;line-height:1.8;color:#4a4a4a;margin-bottom:12px}
-.pull-stat{border-left:2px solid #8b2500;padding:12px 18px;margin:18px 0;font-size:.95rem;color:#1a1a1a;font-style:italic;line-height:1.6;background:rgba(139,37,0,.03)}
-.article-quote{font-size:.88rem;color:#6a6560;line-height:1.7;margin-top:14px;padding-left:16px;border-left:1px solid #d5d0c8;font-style:italic}
-
-/* Tooltip */
-.tip{position:fixed;background:#1a1a1a;color:#eee;border-radius:3px;padding:8px 12px;font-size:.78rem;font-family:Helvetica,Arial,sans-serif;pointer-events:none;opacity:0;z-index:100;max-width:260px;line-height:1.5;box-shadow:0 2px 8px rgba(0,0,0,.25);transition:opacity .12s}
-
-svg text{font-family:Helvetica,Arial,sans-serif}
-
-/* Controls */
-.controls{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
-.controls button{background:transparent;border:1px solid #c5bfb3;color:#6a6560;padding:5px 14px;border-radius:2px;font-size:.72rem;cursor:pointer;transition:all .15s;font-family:Helvetica,Arial,sans-serif;letter-spacing:.5px;text-transform:uppercase}
-.controls button:hover{border-color:#8b2500;color:#8b2500}
-.controls button.active{border-color:#8b2500;color:#8b2500;background:rgba(139,37,0,.06)}
-
-.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px}
-.legend-item{display:flex;align-items:center;gap:5px;font-size:.72rem;color:#6a6560;font-family:Helvetica,Arial,sans-serif}
-.legend-sw{width:12px;height:12px;border-radius:2px}
-
-.wip-banner{display:inline-block;font-family:Helvetica,Arial,sans-serif;font-size:.65rem;text-transform:uppercase;letter-spacing:1.5px;color:#8b2500;border:1px solid #8b2500;padding:4px 10px;border-radius:2px;margin-bottom:14px}
-
-.reveal{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}
-.reveal.visible{opacity:1;transform:translateY(0)}
-
-.footer{text-align:center;padding:48px 20px;color:#999;font-size:.72rem;font-family:Helvetica,Arial,sans-serif;border-top:1px solid #e5e0d8;background:#faf8f4;scroll-snap-align:end}
-
-@media(max-width:900px){.section-inner{flex-direction:column}.hero-bg h1{font-size:2.4rem}.text-col{max-width:100%}}
-</style>
-</head>
-<body>
-
-<div id="loading"><div class="bar"><div class="bar-fill"></div></div><p>Loading data</p></div>
-<div class="tip" id="tooltip"></div>
-
-<!-- ═══ HERO ═══ -->
-<section class="snap hero-bg">
-  <h1>The Diploma Divide</h1>
-  <div class="rule"></div>
-  <p class="sub">The promise of higher education has long rested on a simple equation: invest in a degree, secure a better future. The data tells a different story.</p>
-  <p class="byline">Frederic Guintu · Robert Jarman · Caleb Jennings &nbsp;—&nbsp; CS 5/441</p>
-  <div class="scroll-cue">Scroll<span>↓</span></div>
-</section>
-
-<!-- ═══ SECTION 1: Debt/Income by Institution Type ═══ -->
-<section class="snap content-section" id="sec1">
-  <div class="section-inner">
-    <div class="text-col reveal">
-      <div class="kicker">Part I — The Investment</div>
-      <h2>Same Credential, Different Price</h2>
-      <p>At community colleges nationwide, students graduate with modest debt, only to enter a labor market that undervalues their credentials. Meanwhile, graduates from private institutions leave campus carrying more debt but command higher salaries. The gap widens further at HBCUs, where students take on obligations comparable to private schools but face hiring discrimination and network disadvantages.</p>
-      <div class="pull-stat" id="callout1">Loading…</div>
-      <p class="article-quote">The assumption that choosing a less expensive institution guarantees less debt ignores the reality of living costs, family obligations, and the gaps that financial aid fails to cover.</p>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Diploma Divide</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="loading">
+      <div class="bar"><div class="bar-fill"></div></div>
+      <p>Loading data</p>
     </div>
-    <div class="vis-col reveal">
-      <div class="controls" id="inst-controls">
-        <button class="active" data-view="grouped">Debt vs Earnings</button>
-        <button data-view="ratio">Debt-to-Earnings Ratio</button>
+    <div class="tip" id="tooltip"></div>
+
+    <!-- ═══ HERO ═══ -->
+    <section class="snap hero-bg">
+      <h1>The Diploma Divide</h1>
+      <div class="rule"></div>
+      <p class="sub">
+        The promise of higher education has long rested on a simple equation:
+        invest in a degree, secure a better future. The data tells a different
+        story.
+      </p>
+      <p class="byline">
+        Frederic Guintu · Robert Jarman · Caleb Jennings &nbsp;—&nbsp; CS 5/441
+      </p>
+      <div class="scroll-cue">Scroll<span>↓</span></div>
+    </section>
+
+    <!-- ═══ SECTION 1: Debt/Income by Institution Type ═══ -->
+    <section class="snap content-section" id="sec1">
+      <div class="section-inner">
+        <div class="text-col reveal">
+          <div class="kicker">Part I — The Investment</div>
+          <h2>Same Credential, Different Price</h2>
+          <p>
+            At community colleges nationwide, students graduate with modest
+            debt, only to enter a labor market that undervalues their
+            credentials. Meanwhile, graduates from private institutions leave
+            campus carrying more debt but command higher salaries. The gap
+            widens further at HBCUs, where students take on obligations
+            comparable to private schools but face hiring discrimination and
+            network disadvantages.
+          </p>
+          <div class="pull-stat" id="callout1">Loading…</div>
+          <p class="article-quote">
+            The assumption that choosing a less expensive institution guarantees
+            less debt ignores the reality of living costs, family obligations,
+            and the gaps that financial aid fails to cover.
+          </p>
+        </div>
+        <div class="vis-col reveal">
+          <div class="controls" id="inst-controls">
+            <button class="active" data-view="grouped">Debt vs Earnings</button>
+            <button data-view="ratio">Debt-to-Earnings Ratio</button>
+          </div>
+          <div id="vis-institution"></div>
+          <div class="legend">
+            <div class="legend-item">
+              <div class="legend-sw" style="background: #b33"></div>
+              Median Grad Debt
+            </div>
+            <div class="legend-item">
+              <div class="legend-sw" style="background: #2a6496"></div>
+              Median Earnings (6yr)
+            </div>
+          </div>
+        </div>
       </div>
-      <div id="vis-institution"></div>
-      <div class="legend">
-        <div class="legend-item"><div class="legend-sw" style="background:#b33"></div>Median Grad Debt</div>
-        <div class="legend-item"><div class="legend-sw" style="background:#2a6496"></div>Median Earnings (6yr)</div>
+    </section>
+
+    <!-- ═══ SECTION 2: Gender Earnings Gap ═══ -->
+    <section class="snap content-section" id="sec2">
+      <div class="section-inner">
+        <div class="text-col reveal">
+          <div class="kicker">Part II — The Wage Gap</div>
+          <h2>Same Degree, Unequal Returns</h2>
+          <p>
+            Women borrow slightly more than men on average — a difference that
+            seems minor until paired with earnings data. The wage gap transforms
+            a modest difference in borrowing into a significant difference in
+            repayment capacity. The monthly payment represents a larger share of
+            take-home pay, leaving less room for emergencies, savings, or the
+            investments that build wealth over time.
+          </p>
+          <div class="pull-stat" id="callout2">Loading…</div>
+          <p class="article-quote">
+            A woman leaving a state university faces a fundamentally different
+            financial reality than a man with similar debt. Women across all
+            institution types earn less than men with identical degrees, turning
+            the same educational investment into unequal returns.
+          </p>
+        </div>
+        <div class="vis-col reveal">
+          <div class="controls" id="gender-controls">
+            <button class="active" data-view="absolute">
+              Earnings Over Time
+            </button>
+            <button data-view="ratio">Cents per Dollar</button>
+          </div>
+          <div id="vis-gender"></div>
+        </div>
       </div>
-    </div>
-  </div>
-</section>
+    </section>
 
-<!-- ═══ SECTION 2: Gender Earnings Gap ═══ -->
-<section class="snap content-section" id="sec2">
-  <div class="section-inner">
-    <div class="text-col reveal">
-      <div class="kicker">Part II — The Wage Gap</div>
-      <h2>Same Degree, Unequal Returns</h2>
-      <p>Women borrow slightly more than men on average — a difference that seems minor until paired with earnings data. The wage gap transforms a modest difference in borrowing into a significant difference in repayment capacity. The monthly payment represents a larger share of take-home pay, leaving less room for emergencies, savings, or the investments that build wealth over time.</p>
-      <div class="pull-stat" id="callout2">Loading…</div>
-      <p class="article-quote">A woman leaving a state university faces a fundamentally different financial reality than a man with similar debt. Women across all institution types earn less than men with identical degrees, turning the same educational investment into unequal returns.</p>
-    </div>
-    <div class="vis-col reveal">
-      <div class="controls" id="gender-controls">
-        <button class="active" data-view="absolute">Earnings Over Time</button>
-        <button data-view="ratio">Cents per Dollar</button>
+    <!-- ═══ SECTION 3: Completion Rates ═══ -->
+    <section class="snap content-section" id="sec3">
+      <div class="section-inner">
+        <div class="text-col reveal">
+          <div class="kicker">Part III — The Finish Line</div>
+          <h2>Who Gets to Graduate?</h2>
+          <p>
+            Before debt and earnings even enter the picture, completion rates
+            reveal a prior inequality. Community college graduates,
+            disproportionately students of color and first-generation students,
+            face the steepest odds. Among four-year institutions, the
+            disparities persist across racial demographics — the same access to
+            enrollment does not translate to the same access to a diploma.
+          </p>
+          <div class="pull-stat" id="callout3">Loading…</div>
+          <p class="article-quote">
+            Access to college is not the same as access to its benefits. The
+            diploma should not be a dividing line that separates those for whom
+            education delivers on its promise from those for whom it simply
+            delivers debt.
+          </p>
+        </div>
+        <div class="vis-col reveal">
+          <div id="vis-completion"></div>
+        </div>
       </div>
-      <div id="vis-gender"></div>
-    </div>
-  </div>
-</section>
+    </section>
 
-<!-- ═══ SECTION 3: Completion Rates ═══ -->
-<section class="snap content-section" id="sec3">
-  <div class="section-inner">
-    <div class="text-col reveal">
-      <div class="kicker">Part III — The Finish Line</div>
-      <h2>Who Gets to Graduate?</h2>
-      <p>Before debt and earnings even enter the picture, completion rates reveal a prior inequality. Community college graduates, disproportionately students of color and first-generation students, face the steepest odds. Among four-year institutions, the disparities persist across racial demographics — the same access to enrollment does not translate to the same access to a diploma.</p>
-      <div class="pull-stat" id="callout3">Loading…</div>
-      <p class="article-quote">Access to college is not the same as access to its benefits. The diploma should not be a dividing line that separates those for whom education delivers on its promise from those for whom it simply delivers debt.</p>
-    </div>
-    <div class="vis-col reveal">
-      <div id="vis-completion"></div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══ SECTION 4: Hurdle Race (WIP) ═══ -->
-<section class="snap content-section" id="sec4">
-  <div class="section-inner">
-    <div class="text-col reveal">
-      <div class="kicker">Part IV — The Long Road</div>
-      <h2>The Race to Debt Free</h2>
-      <span class="wip-banner">Work in Progress — Hand-drawn visuals forthcoming</span>
-      <p>The mathematics of debt repayment illuminates why these disparities matter beyond the immediate paycheck. A graduate earning less with comparable debt spends a larger portion of income on loan payments. They delay homeownership, cannot contribute to retirement accounts, and struggle to absorb unexpected costs. The higher earner, despite similar absolute debt, achieves financial flexibility within years.</p>
-      <div class="pull-stat" id="callout4">Loading…</div>
-      <p class="article-quote">First-generation students and those from low-income backgrounds borrow at higher rates regardless of where they enroll, because grants and family contributions cannot bridge the full cost of attendance.</p>
-    </div>
-    <div class="vis-col reveal">
-      <div id="vis-racetrack"></div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══ SECTION 5: Beeswarm ═══ -->
-<section class="snap content-section" id="sec5">
-  <div class="section-inner">
-    <div class="text-col reveal">
-      <div class="kicker">Part V — The Full Picture</div>
-      <h2>Every Institution Tells a Story</h2>
-      <p>When debt and earnings combine across institution types, the resulting patterns expose systematic inequity. HBCU graduates carry the cultural and social capital of their institutions but cluster at higher debt-to-earnings ratios. For-profit schools show the widest spread. These disparities do not reflect individual merit or effort — they reflect structures that assign different values to the same achievement.</p>
-      <div class="pull-stat" id="callout5">Loading…</div>
-      <p class="article-quote">Students making rational choices about affordability and accessibility find themselves penalized in a labor market that rewards institutional prestige and demographic privilege.</p>
-    </div>
-    <div class="vis-col reveal">
-      <div class="controls" id="bee-controls">
-        <button class="active" data-filter="all">All</button>
-        <button data-filter="1">Public</button>
-        <button data-filter="2">Private Nonprofit</button>
-        <button data-filter="3">For-Profit</button>
-        <button data-filter="hbcu">HBCU</button>
+    <!-- ═══ SECTION 4: Hurdle Race (WIP) ═══ -->
+    <section class="snap content-section" id="sec4">
+      <div class="section-inner">
+        <div class="text-col reveal">
+          <div class="kicker">Part IV — The Long Road</div>
+          <h2>The Race to Debt Free</h2>
+          <span class="wip-banner"
+            >Work in Progress — Hand-drawn visuals forthcoming</span
+          >
+          <p>
+            The mathematics of debt repayment illuminates why these disparities
+            matter beyond the immediate paycheck. A graduate earning less with
+            comparable debt spends a larger portion of income on loan payments.
+            They delay homeownership, cannot contribute to retirement accounts,
+            and struggle to absorb unexpected costs. The higher earner, despite
+            similar absolute debt, achieves financial flexibility within years.
+          </p>
+          <div class="pull-stat" id="callout4">Loading…</div>
+          <p class="article-quote">
+            First-generation students and those from low-income backgrounds
+            borrow at higher rates regardless of where they enroll, because
+            grants and family contributions cannot bridge the full cost of
+            attendance.
+          </p>
+        </div>
+        <div class="vis-col reveal">
+          <div id="vis-racetrack"></div>
+        </div>
       </div>
-      <div id="vis-beeswarm"></div>
-      <div class="legend">
-        <div class="legend-item"><div class="legend-sw" style="background:#2a6496"></div>Public</div>
-        <div class="legend-item"><div class="legend-sw" style="background:#b8860b"></div>Private Nonprofit</div>
-        <div class="legend-item"><div class="legend-sw" style="background:#b33"></div>For-Profit</div>
-        <div class="legend-item"><div class="legend-sw" style="background:#6a3d9a"></div>HBCU</div>
+    </section>
+
+    <!-- ═══ SECTION 5: Beeswarm ═══ -->
+    <section class="snap content-section" id="sec5">
+      <div class="section-inner">
+        <div class="text-col reveal">
+          <div class="kicker">Part V — The Full Picture</div>
+          <h2>Every Institution Tells a Story</h2>
+          <p>
+            When debt and earnings combine across institution types, the
+            resulting patterns expose systematic inequity. HBCU graduates carry
+            the cultural and social capital of their institutions but cluster at
+            higher debt-to-earnings ratios. For-profit schools show the widest
+            spread. These disparities do not reflect individual merit or effort
+            — they reflect structures that assign different values to the same
+            achievement.
+          </p>
+          <div class="pull-stat" id="callout5">Loading…</div>
+          <p class="article-quote">
+            Students making rational choices about affordability and
+            accessibility find themselves penalized in a labor market that
+            rewards institutional prestige and demographic privilege.
+          </p>
+        </div>
+        <div class="vis-col reveal">
+          <div class="controls" id="bee-controls">
+            <button class="active" data-filter="all">All</button>
+            <button data-filter="1">Public</button>
+            <button data-filter="2">Private Nonprofit</button>
+            <button data-filter="3">For-Profit</button>
+            <button data-filter="hbcu">HBCU</button>
+          </div>
+          <div id="vis-beeswarm"></div>
+          <div class="legend">
+            <div class="legend-item">
+              <div class="legend-sw" style="background: #2a6496"></div>
+              Public
+            </div>
+            <div class="legend-item">
+              <div class="legend-sw" style="background: #b8860b"></div>
+              Private Nonprofit
+            </div>
+            <div class="legend-item">
+              <div class="legend-sw" style="background: #b33"></div>
+              For-Profit
+            </div>
+            <div class="legend-item">
+              <div class="legend-sw" style="background: #6a3d9a"></div>
+              HBCU
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-</section>
+    </section>
 
-<footer class="footer">
-  Data: U.S. Department of Education College Scorecard (Most Recent Cohorts)<br>
-  Built with D3.js &nbsp;·&nbsp; CS 5/441 &nbsp;·&nbsp; Frederic Guintu, Robert Jarman, Caleb Jennings
-</footer>
+    <footer class="footer">
+      Data: U.S. Department of Education College Scorecard (Most Recent
+      Cohorts)<br />
+      Built with D3.js &nbsp;·&nbsp; CS 5/441 &nbsp;·&nbsp; Frederic Guintu,
+      Robert Jarman, Caleb Jennings
+    </footer>
 
-<script>
-// ════════════════════════════════
-// Scroll reveal
-// ════════════════════════════════
-const revealObs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')})},{threshold:.15});
-document.querySelectorAll('.reveal').forEach(el=>revealObs.observe(el));
-
-// ════════════════════════════════
-// Tooltip
-// ════════════════════════════════
-const tip=d3.select('#tooltip');
-function showTip(evt,html){tip.html(html).style('opacity',1).style('left',(evt.clientX+12)+'px').style('top',(evt.clientY-8)+'px')}
-function hideTip(){tip.style('opacity',0)}
-
-// ════════════════════════════════
-// Utilities
-// ════════════════════════════════
-function safeNum(v){if(v==null||v===''||v==='PS'||v==='PrivacySuppressed'||v==='NULL')return NaN;const n=+v;return isNaN(n)?NaN:n}
-function med(arr){const s=arr.filter(v=>!isNaN(v)).sort((a,b)=>a-b);if(!s.length)return NaN;const m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2}
-function fmt$(v){return '$'+Math.round(v).toLocaleString()}
-function fmtPct(v){return(v*100).toFixed(1)+'%'}
-
-const C={red:'#b33',blue:'#2a6496',gold:'#b8860b',green:'#3a7d44',orange:'#c4651a',teal:'#2a7b7b',purple:'#6a3d9a',slate:'#5a5a5a',axis:'#bbb',grid:'#e8e4dc',bg:'#faf8f4'};
-
-// ════════════════════════════════
-// Load CSV
-// ════════════════════════════════
-Papa.parse('data/filtered_data.csv',{
-  download:true,header:true,skipEmptyLines:true,dynamicTyping:false,
-  complete:function(res){
-    const rows=res.data.map(r=>{
-      const o={...r};
-      o._PREDDEG=safeNum(r.PREDDEG);o._CONTROL=safeNum(r.CONTROL);o._HBCU=safeNum(r.HBCU);
-      o._UGDS=safeNum(r.UGDS);o._GRAD_DEBT_MDN=safeNum(r.GRAD_DEBT_MDN);
-      o._LO_INC_DEBT_MDN=safeNum(r.LO_INC_DEBT_MDN);o._MD_INC_DEBT_MDN=safeNum(r.MD_INC_DEBT_MDN);
-      o._HI_INC_DEBT_MDN=safeNum(r.HI_INC_DEBT_MDN);o._FIRSTGEN_DEBT_MDN=safeNum(r.FIRSTGEN_DEBT_MDN);
-      for(let yr=6;yr<=10;yr++){
-        o[`_EP${yr}`]=safeNum(r[`MD_EARN_WNE_P${yr}`]);
-        o[`_EM${yr}`]=safeNum(r[`MD_EARN_WNE_MALE1_P${yr}`]);
-        o[`_EF${yr}`]=safeNum(r[`MD_EARN_WNE_MALE0_P${yr}`]);
-      }
-      o._C150_WHITE=safeNum(r.C150_4_WHITE);o._C150_BLACK=safeNum(r.C150_4_BLACK);
-      o._C150_HISP=safeNum(r.C150_4_HISP);o._C150_ASIAN=safeNum(r.C150_4_ASIAN);
-      o._C150_AIAN=safeNum(r.C150_4_AIAN);o._C150_NHPI=safeNum(r.C150_4_NHPI);
-      o._C150_2MOR=safeNum(r.C150_4_2MOR);
-      return o;
-    });
-    document.getElementById('loading').classList.add('done');
-    buildAll(rows);
-  }
-});
-
-function buildAll(rows){
-  const cc=rows.filter(r=>r._PREDDEG===2);
-  const fy=rows.filter(r=>r._PREDDEG===3);
-  const pub4=rows.filter(r=>r._CONTROL===1&&r._PREDDEG===3);
-  const priv4=rows.filter(r=>r._CONTROL===2&&r._PREDDEG===3);
-  const fp4=rows.filter(r=>r._CONTROL===3&&r._PREDDEG===3);
-  const hbcus=rows.filter(r=>r._HBCU===1);
-
-  // ── Section 1 ──
-  const s1=[
-    {label:'Community College',debt:med(cc.map(r=>r._GRAD_DEBT_MDN)),earn:med(cc.map(r=>r._EP6))},
-    {label:'Public 4-Year',debt:med(pub4.map(r=>r._GRAD_DEBT_MDN)),earn:med(pub4.map(r=>r._EP6))},
-    {label:'Private Nonprofit',debt:med(priv4.map(r=>r._GRAD_DEBT_MDN)),earn:med(priv4.map(r=>r._EP6))},
-    {label:'Private For-Profit',debt:med(fp4.map(r=>r._GRAD_DEBT_MDN)),earn:med(fp4.map(r=>r._EP6))},
-    {label:'HBCU',debt:med(hbcus.map(r=>r._GRAD_DEBT_MDN)),earn:med(hbcus.map(r=>r._EP6))}
-  ].filter(d=>!isNaN(d.debt)&&!isNaN(d.earn));
-
-  const pv=s1.find(d=>d.label==='Private Nonprofit'),pu=s1.find(d=>d.label==='Public 4-Year'),hb=s1.find(d=>d.label==='HBCU');
-  if(pv&&pu&&hb) document.getElementById('callout1').textContent=
-    `Community college graduates carry the least debt, but HBCU students take on ${fmt$(hb.debt)} — comparable to private nonprofits at ${fmt$(pv.debt)} — while earning ${fmt$(hb.earn)} vs ${fmt$(pv.earn)} six years out.`;
-  drawS1(s1);
-
-  // ── Section 2 ──
-  const s2=[];
-  for(let yr=6;yr<=10;yr++){
-    const m=med(rows.map(r=>r[`_EM${yr}`])),f=med(rows.map(r=>r[`_EF${yr}`]));
-    if(!isNaN(m)&&!isNaN(f))s2.push({yr,male:m,female:f});
-  }
-  if(s2.length){
-    const last=s2[s2.length-1];
-    const cents=(last.female/last.male*100).toFixed(1);
-    document.getElementById('callout2').textContent=
-      `Female graduates earn approximately ${cents} cents for every dollar their male peers make. By ${last.yr} years out, women earn ${fmt$(last.female)} vs ${fmt$(last.male)} for men — a gap of ${fmt$(last.male-last.female)} annually.`;
-  }
-  drawS2(s2);
-
-  // ── Section 3 ──
-  const raceSpec=[{r:'White',k:'_C150_WHITE',c:C.blue},{r:'Black',k:'_C150_BLACK',c:C.red},{r:'Hispanic',k:'_C150_HISP',c:C.gold},
-    {r:'Asian',k:'_C150_ASIAN',c:C.green},{r:'AIAN',k:'_C150_AIAN',c:C.orange},{r:'NHPI',k:'_C150_NHPI',c:C.teal},{r:'Two+',k:'_C150_2MOR',c:C.purple}];
-  const s3=raceSpec.map(s=>({race:s.r,rate:med(fy.map(r=>r[s.k])),color:s.c})).filter(d=>!isNaN(d.rate));
-  if(s3.length>=2){
-    const best=s3.reduce((a,b)=>a.rate>b.rate?a:b),worst=s3.reduce((a,b)=>a.rate<b.rate?a:b);
-    document.getElementById('callout3').textContent=
-      `${best.race} students complete at ${fmtPct(best.rate)}, while ${worst.race} students complete at ${fmtPct(worst.rate)} — the same enrollment does not guarantee the same outcome.`;
-  }
-  drawS3(s3);
-
-  // ── Section 4 ──
-  const ep6All=med(rows.map(r=>r._EP6));
-  function estYr(col){const d=med(rows.map(r=>r[col]));return(!isNaN(d)&&!isNaN(ep6All)&&ep6All>0)?d/(ep6All*.10):NaN}
-  const s4=[
-    {id:'A',label:'High Income',color:C.blue,debt:med(rows.map(r=>r._HI_INC_DEBT_MDN)),earn:ep6All,years:estYr('_HI_INC_DEBT_MDN')},
-    {id:'B',label:'Middle Income',color:C.gold,debt:med(rows.map(r=>r._MD_INC_DEBT_MDN)),earn:ep6All,years:estYr('_MD_INC_DEBT_MDN')},
-    {id:'C',label:'Low Income',color:C.red,debt:med(rows.map(r=>r._LO_INC_DEBT_MDN)),earn:ep6All,years:estYr('_LO_INC_DEBT_MDN')},
-    {id:'D',label:'First-Gen',color:C.purple,debt:med(rows.map(r=>r._FIRSTGEN_DEBT_MDN)),earn:ep6All,years:estYr('_FIRSTGEN_DEBT_MDN')}
-  ].filter(d=>!isNaN(d.years));
-  if(s4.length){
-    const fast=s4.reduce((a,b)=>a.years<b.years?a:b),slow=s4.reduce((a,b)=>a.years>b.years?a:b);
-    document.getElementById('callout4').textContent=
-      `${fast.label} graduates could be debt-free in ~${fast.years.toFixed(0)} years. ${slow.label} borrowers face ~${slow.years.toFixed(0)} years — delaying homeownership, retirement savings, and wealth-building for over a decade longer.`;
-  }
-  drawS4(s4);
-
-  // ── Section 5 ──
-  const beeRaw=rows.filter(r=>!isNaN(r._GRAD_DEBT_MDN)&&!isNaN(r._EP6)&&r._EP6>0&&!isNaN(r._UGDS)&&r._UGDS>0)
-    .map(r=>({name:r.INSTNM||'Unknown',control:r._CONTROL,hbcu:r._HBCU,ratio:r._GRAD_DEBT_MDN/r._EP6,ug:r._UGDS,debt:r._GRAD_DEBT_MDN,earn:r._EP6}));
-  const beeData=beeRaw.filter(d=>d.ratio>0&&d.ratio<3);
-  const nP=beeData.filter(d=>d.control===1).length,nN=beeData.filter(d=>d.control===2).length,
-        nF=beeData.filter(d=>d.control===3).length,nH=beeData.filter(d=>d.hbcu===1).length;
-  document.getElementById('callout5').textContent=
-    `Across ${beeData.length} institutions — ${nP} public, ${nN} private nonprofit, ${nF} for-profit, and ${nH} HBCUs — the landscape of debt-to-earnings ratios reveals who the current system truly serves.`;
-  drawS5(beeData);
-}
-
-// ════════════════════════════════
-// SECTION 1: Institution Type
-// ════════════════════════════════
-function drawS1(data){
-  const W=600,H=440,M={t:24,r:24,b:110,l:58},w=W-M.l-M.r,h=H-M.t-M.b;
-  const svg=d3.select('#vis-institution').append('svg').attr('viewBox',`0 0 ${W} ${H}`).attr('width','100%').style('overflow','visible');
-  const g=svg.append('g').attr('transform',`translate(${M.l},${M.t})`);
-  const x0=d3.scaleBand().domain(data.map(d=>d.label)).range([0,w]).padding(.3);
-  const x1=d3.scaleBand().domain(['debt','earn']).range([0,x0.bandwidth()]).padding(.1);
-  const maxV=d3.max(data,d=>Math.max(d.debt,d.earn))*1.15;
-  const y=d3.scaleLinear().domain([0,maxV]).range([h,0]);
-  const xAx=g.append('g').attr('transform',`translate(0,${h})`);
-  const yAx=g.append('g');
-
-  function renderAxis(){
-    xAx.call(d3.axisBottom(x0).tickSize(0)).select('.domain').attr('stroke',C.axis);
-    xAx.selectAll('text').attr('fill','#666').style('font-size','10px').attr('dy','1em');
-  }
-
-  function grouped(){
-    y.domain([0,maxV]);
-    yAx.transition().duration(500).call(d3.axisLeft(y).ticks(5).tickFormat(d=>`$${d/1000}K`));
-    yAx.selectAll('text').attr('fill','#666');yAx.select('.domain').attr('stroke',C.axis);
-    renderAxis();
-    g.selectAll('.rbar,.rlabel').remove();
-    const grp=g.selectAll('.bg').data(data,d=>d.label);
-    const en=grp.enter().append('g').attr('class','bg').attr('transform',d=>`translate(${x0(d.label)},0)`);
-    en.append('rect').attr('class','bd').attr('x',x1('debt')).attr('width',x1.bandwidth()).attr('rx',2).attr('fill',C.red).attr('y',h).attr('height',0)
-      .on('mouseover',(e,d)=>showTip(e,`<b>${d.label}</b><br>Median Grad Debt: ${fmt$(d.debt)}`)).on('mouseout',hideTip);
-    en.append('rect').attr('class','be').attr('x',x1('earn')).attr('width',x1.bandwidth()).attr('rx',2).attr('fill',C.blue).attr('y',h).attr('height',0)
-      .on('mouseover',(e,d)=>showTip(e,`<b>${d.label}</b><br>Median Earnings (6yr): ${fmt$(d.earn)}`)).on('mouseout',hideTip);
-    const mg=en.merge(grp);
-    mg.select('.bd').transition().duration(600).attr('y',d=>y(d.debt)).attr('height',d=>h-y(d.debt));
-    mg.select('.be').transition().duration(600).attr('y',d=>y(d.earn)).attr('height',d=>h-y(d.earn));
-  }
-
-  function ratio(){
-    const rd=data.map(d=>({...d,ratio:d.debt/d.earn}));
-    const mx=d3.max(rd,d=>d.ratio)*1.2;
-    y.domain([0,mx]);
-    yAx.transition().duration(500).call(d3.axisLeft(y).ticks(5).tickFormat(d3.format('.0%')));
-    yAx.selectAll('text').attr('fill','#666');
-    g.selectAll('.bd,.be').transition().duration(300).attr('height',0).attr('y',h);
-    const color=d3.scaleSequential(d3.interpolateRdYlGn).domain([mx,0]);
-    const bars=g.selectAll('.rbar').data(rd,d=>d.label);
-    bars.enter().append('rect').attr('class','rbar').attr('x',d=>x0(d.label)+x0.bandwidth()*.15)
-      .attr('width',x0.bandwidth()*.7).attr('rx',2).attr('y',h).attr('height',0)
-      .on('mouseover',(e,d)=>showTip(e,`<b>${d.label}</b><br>Debt/Earnings: ${fmtPct(d.ratio)}`)).on('mouseout',hideTip)
-      .merge(bars).transition().duration(600).attr('y',d=>y(d.ratio)).attr('height',d=>h-y(d.ratio)).attr('fill',d=>color(d.ratio));
-    const lbl=g.selectAll('.rlabel').data(rd,d=>d.label);
-    lbl.enter().append('text').attr('class','rlabel').attr('x',d=>x0(d.label)+x0.bandwidth()/2)
-      .attr('text-anchor','middle').attr('fill','#333').attr('font-size','12px').attr('font-weight','700')
-      .merge(lbl).transition().duration(600).attr('y',d=>y(d.ratio)-6).attr('opacity',1)
-      .tween('text',function(d){const i=d3.interpolateNumber(0,d.ratio*100);return t=>{d3.select(this).text(i(t).toFixed(0)+'%')}});
-  }
-
-  grouped();
-  d3.select('#inst-controls').selectAll('button').on('click',function(){
-    d3.select('#inst-controls').selectAll('button').classed('active',false);
-    d3.select(this).classed('active',true);
-    d3.select(this).attr('data-view')==='grouped'?grouped():ratio();
-  });
-}
-
-// ════════════════════════════════
-// SECTION 2: Gender Earnings
-// ════════════════════════════════
-function drawS2(data){
-  if(!data.length)return;
-  const W=600,H=360,M={t:24,r:50,b:44,l:58},w=W-M.l-M.r,h=H-M.t-M.b;
-  const svg=d3.select('#vis-gender').append('svg').attr('viewBox',`0 0 ${W} ${H}`).attr('width','100%').style('overflow','visible');
-  const g=svg.append('g').attr('transform',`translate(${M.l},${M.t})`);
-  const x=d3.scaleLinear().domain(d3.extent(data,d=>d.yr)).range([0,w]);
-  const yA=d3.scaleLinear().domain([0,d3.max(data,d=>d.male)*1.15]).range([h,0]);
-  const ratioData=data.map(d=>({yr:d.yr,ratio:d.female/d.male}));
-  const yR=d3.scaleLinear().domain([0,1.1]).range([h,0]);
-  const xG=g.append('g').attr('transform',`translate(0,${h})`);
-  const yG=g.append('g');
-  const lG=g.append('g');
-
-  function absolute(){
-    xG.transition().duration(400).call(d3.axisBottom(x).ticks(data.length).tickFormat(d=>d+' yr'));
-    yG.transition().duration(400).call(d3.axisLeft(yA).ticks(5).tickFormat(d=>`$${d/1000}K`));
-    [xG,yG].forEach(a=>{a.selectAll('text').attr('fill','#666');a.select('.domain').attr('stroke',C.axis)});
-    lG.selectAll('*').remove();
-    const area=d3.area().x(d=>x(d.yr)).y0(d=>yA(d.female)).y1(d=>yA(d.male)).curve(d3.curveMonotoneX);
-    lG.append('path').datum(data).attr('d',area).attr('fill','rgba(179,51,51,.08)');
-    lG.append('path').datum(data).attr('d',d3.line().x(d=>x(d.yr)).y(d=>yA(d.male)).curve(d3.curveMonotoneX)).attr('fill','none').attr('stroke',C.blue).attr('stroke-width',2.5);
-    lG.append('path').datum(data).attr('d',d3.line().x(d=>x(d.yr)).y(d=>yA(d.female)).curve(d3.curveMonotoneX)).attr('fill','none').attr('stroke',C.red).attr('stroke-width',2.5);
-    data.forEach(d=>{
-      const tt=e=>showTip(e,`<b>${d.yr} Years Post-Entry</b><br>Men: ${fmt$(d.male)}<br>Women: ${fmt$(d.female)}<br>Gap: ${fmt$(d.male-d.female)}`);
-      lG.append('circle').attr('cx',x(d.yr)).attr('cy',yA(d.male)).attr('r',4).attr('fill',C.blue).attr('stroke',C.bg).attr('stroke-width',2).on('mouseover',tt).on('mouseout',hideTip);
-      lG.append('circle').attr('cx',x(d.yr)).attr('cy',yA(d.female)).attr('r',4).attr('fill',C.red).attr('stroke',C.bg).attr('stroke-width',2).on('mouseover',tt).on('mouseout',hideTip);
-    });
-    const l=data[data.length-1];
-    lG.append('line').attr('x1',x(l.yr)+10).attr('x2',x(l.yr)+10).attr('y1',yA(l.male)).attr('y2',yA(l.female)).attr('stroke',C.red).attr('stroke-width',1).attr('stroke-dasharray','3,3');
-    lG.append('text').attr('x',x(l.yr)+16).attr('y',(yA(l.male)+yA(l.female))/2+4).attr('fill',C.red).attr('font-size','11px').attr('font-weight','600').text(`${fmt$(l.male-l.female)} gap`);
-    lG.append('text').attr('x',w+6).attr('y',yA(l.male)+4).attr('fill',C.blue).attr('font-size','11px').text('Men');
-    lG.append('text').attr('x',w+6).attr('y',yA(l.female)+4).attr('fill',C.red).attr('font-size','11px').text('Women');
-  }
-
-  function ratioView(){
-    xG.transition().duration(400).call(d3.axisBottom(x).ticks(data.length).tickFormat(d=>d+' yr'));
-    yG.transition().duration(400).call(d3.axisLeft(yR).ticks(5).tickFormat(d=>`$${d.toFixed(2)}`));
-    [xG,yG].forEach(a=>{a.selectAll('text').attr('fill','#666');a.select('.domain').attr('stroke',C.axis)});
-    lG.selectAll('*').remove();
-    lG.append('line').attr('x1',0).attr('x2',w).attr('y1',yR(1)).attr('y2',yR(1)).attr('stroke','#ccc').attr('stroke-dasharray','5,4');
-    lG.append('text').attr('x',w-4).attr('y',yR(1)-7).attr('text-anchor','end').attr('fill','#999').attr('font-size','10px').text('$1.00 = parity');
-    lG.append('path').datum(ratioData).attr('d',d3.line().x(d=>x(d.yr)).y(d=>yR(d.ratio)).curve(d3.curveMonotoneX)).attr('fill','none').attr('stroke',C.gold).attr('stroke-width',2.5);
-    ratioData.forEach(d=>{
-      lG.append('circle').attr('cx',x(d.yr)).attr('cy',yR(d.ratio)).attr('r',5).attr('fill',C.gold).attr('stroke',C.bg).attr('stroke-width',2)
-        .on('mouseover',e=>showTip(e,`<b>${d.yr} Yrs Post-Entry</b><br>Women earn $${d.ratio.toFixed(2)} per $1 men earn`)).on('mouseout',hideTip);
-    });
-  }
-
-  absolute();
-  d3.select('#gender-controls').selectAll('button').on('click',function(){
-    d3.select('#gender-controls').selectAll('button').classed('active',false);
-    d3.select(this).classed('active',true);
-    d3.select(this).attr('data-view')==='absolute'?absolute():ratioView();
-  });
-}
-
-// ════════════════════════════════
-// SECTION 3: Completion
-// ════════════════════════════════
-function drawS3(data){
-  if(!data.length)return;
-  const W=600,H=380,M={t:16,r:16,b:44,l:50},w=W-M.l-M.r,h=H-M.t-M.b;
-  const svg=d3.select('#vis-completion').append('svg').attr('viewBox',`0 0 ${W} ${H}`).attr('width','100%');
-  const g=svg.append('g').attr('transform',`translate(${M.l},${M.t})`);
-  const x=d3.scaleBand().domain(data.map(d=>d.race)).range([0,w]).padding(.28);
-  const y=d3.scaleLinear().domain([0,1]).range([h,0]);
-  g.append('g').attr('transform',`translate(0,${h})`).call(d3.axisBottom(x).tickSize(0)).selectAll('text').attr('fill','#666').style('font-size','11px');
-  g.append('g').call(d3.axisLeft(y).ticks(5).tickFormat(d3.format('.0%'))).selectAll('text').attr('fill','#666');
-  g.selectAll('.domain').attr('stroke',C.axis);
-  y.ticks(5).forEach(t=>{g.append('line').attr('x1',0).attr('x2',w).attr('y1',y(t)).attr('y2',y(t)).attr('stroke',C.grid).attr('stroke-dasharray','2,3')});
-
-  let animated=false;
-  const obs=new IntersectionObserver(entries=>{
-    if(entries[0].isIntersecting&&!animated){
-      animated=true;
-      g.selectAll('.cb').data(data).enter().append('rect').attr('class','cb')
-        .attr('x',d=>x(d.race)).attr('width',x.bandwidth()).attr('y',h).attr('height',0)
-        .attr('fill',d=>d.color).attr('rx',2).attr('opacity',.82)
-        .on('mouseover',function(e,d){d3.select(this).attr('opacity',1);showTip(e,`<b>${d.race}</b><br>150% Completion: ${fmtPct(d.rate)}`)})
-        .on('mouseout',function(){d3.select(this).attr('opacity',.82);hideTip()})
-        .transition().duration(700).delay((_,i)=>i*80).attr('y',d=>y(d.rate)).attr('height',d=>h-y(d.rate));
-      g.selectAll('.cl').data(data).enter().append('text').attr('class','cl')
-        .attr('x',d=>x(d.race)+x.bandwidth()/2).attr('y',d=>y(d.rate)-6)
-        .attr('text-anchor','middle').attr('fill','#333').attr('font-size','12px').attr('font-weight','600')
-        .attr('opacity',0).text(d=>fmtPct(d.rate))
-        .transition().duration(500).delay((_,i)=>i*80+500).attr('opacity',1);
-    }
-  },{threshold:.3});
-  obs.observe(document.getElementById('sec3'));
-}
-
-// ════════════════════════════════
-// SECTION 4: Racetrack (WIP)
-// ════════════════════════════════
-function drawS4(data){
-  if(!data.length)return;
-  const W=600,H=440,cx=W/2,cy=H/2;
-  const svg=d3.select('#vis-racetrack').append('svg').attr('viewBox',`0 0 ${W} ${H}`).attr('width','100%');
-  const maxY=d3.max(data,d=>d.years)*1.3;
-  const ts=d3.scaleLinear().domain([0,maxY]).range([55,190]);
-
-  svg.append('text').attr('x',cx).attr('y',28).attr('text-anchor','middle')
-    .attr('fill','#ccc').attr('font-size','10px').attr('font-family','Helvetica,Arial,sans-serif')
-    .attr('letter-spacing','2px').text('PLACEHOLDER — HAND-DRAWN VERSION IN PROGRESS');
-
-  for(let i=0;i<=maxY;i+=4){
-    svg.append('ellipse').attr('cx',cx).attr('cy',cy).attr('rx',ts(i)*1.4).attr('ry',ts(i))
-      .attr('fill','none').attr('stroke','#e5e0d8').attr('stroke-width',1);
-  }
-  svg.append('line').attr('x1',cx).attr('x2',cx).attr('y1',cy-50).attr('y2',cy+50)
-    .attr('stroke','#ccc').attr('stroke-width',1.5).attr('stroke-dasharray','5,4');
-  svg.append('text').attr('x',cx).attr('y',cy-56).attr('text-anchor','middle').attr('fill','#999')
-    .attr('font-size','9px').attr('font-family','Helvetica,Arial,sans-serif').attr('letter-spacing','1px').text('FINISH: DEBT FREE');
-
-  const angles=data.map((_,i)=>-0.3-i*0.85);
-  data.forEach((d,i)=>{
-    const rx=ts(d.years)*1.4,ry=ts(d.years),a=angles[i];
-    const px=cx+rx*Math.cos(a),py=cy+ry*Math.sin(a);
-    const car=svg.append('g').attr('class','car-group').attr('transform',`translate(${px},${py})`)
-      .on('mouseover',e=>showTip(e,`<b>${d.label}</b><br>Median Debt: ${fmt$(d.debt)}<br>Median Earnings (6yr): ${fmt$(d.earn)}<br>Est. Years to Repay: ~${d.years.toFixed(1)}`))
-      .on('mouseout',hideTip);
-    car.append('rect').attr('class','car-body').attr('x',-16).attr('y',-9).attr('width',32).attr('height',18)
-      .attr('rx',7).attr('fill',d.color).attr('opacity',.85);
-    car.append('text').attr('text-anchor','middle').attr('y',4).attr('fill','#fff').attr('font-size','11px').attr('font-weight','700').text(d.id);
-    const lY=py<cy?-22:26;
-    car.append('text').attr('text-anchor','middle').attr('y',lY).attr('fill',d.color).attr('font-size','10px').attr('font-weight','600').text(d.label);
-    car.append('text').attr('text-anchor','middle').attr('y',lY+13).attr('fill','#999').attr('font-size','9px').text(`~${d.years.toFixed(0)} yrs`);
-  });
-  svg.append('text').attr('x',cx).attr('y',cy+4).attr('text-anchor','middle').attr('fill','#bbb').attr('font-size','9px').text('Closer = Faster');
-}
-
-// ════════════════════════════════
-// SECTION 5: Beeswarm
-// ════════════════════════════════
-function drawS5(data){
-  if(!data.length)return;
-  const W=640,H=380,M={t:16,r:16,b:44,l:16},w=W-M.l-M.r,h=H-M.t-M.b;
-  const svg=d3.select('#vis-beeswarm').append('svg').attr('viewBox',`0 0 ${W} ${H}`).attr('width','100%');
-  const g=svg.append('g').attr('transform',`translate(${M.l},${M.t})`);
-  const xMax=d3.quantile(data.map(d=>d.ratio).sort((a,b)=>a-b),.95)||1.5;
-  const x=d3.scaleLinear().domain([0,xMax]).range([0,w]);
-  const r=d3.scaleSqrt().domain([0,d3.quantile(data.map(d=>d.ug).sort((a,b)=>a-b),.95)||30000]).range([1.5,8]).clamp(true);
-  const colors={1:C.blue,2:C.gold,3:C.red};
-  const typeL={1:'Public',2:'Private Nonprofit',3:'For-Profit'};
-
-  g.append('g').attr('transform',`translate(0,${h})`).call(d3.axisBottom(x).ticks(6).tickFormat(d3.format('.0%')))
-    .selectAll('text').attr('fill','#666');
-  g.select('.domain').attr('stroke',C.axis);
-  g.append('text').attr('x',w/2).attr('y',h+36).attr('text-anchor','middle').attr('fill','#999').attr('font-size','10px').text('Debt-to-Earnings Ratio');
-
-  data.forEach(d=>{d.px=x(Math.min(d.ratio,xMax));d.py=h/2+(Math.random()-.5)*h*.78;d.pr=r(d.ug)});
-  function gc(d){return d.hbcu===1?C.purple:colors[d.control]||'#999'}
-  function gl(d){return d.hbcu===1?'HBCU':typeL[d.control]||'Unknown'}
-
-  const circles=g.selectAll('.bee-circle').data(data).enter().append('circle').attr('class','bee-circle')
-    .attr('cx',d=>d.px).attr('cy',d=>d.py).attr('r',0).attr('fill',d=>gc(d)).attr('opacity',.55)
-    .on('mouseover',function(e,d){d3.select(this).attr('opacity',1).attr('stroke','#333').attr('stroke-width',1.5);
-      showTip(e,`<b>${d.name}</b><br>Type: ${gl(d)}<br>Debt/Earnings: ${fmtPct(d.ratio)}<br>Debt: ${fmt$(d.debt)}<br>Earnings: ${fmt$(d.earn)}<br>Enrollment: ${Math.round(d.ug).toLocaleString()}`)})
-    .on('mouseout',function(){d3.select(this).attr('opacity',.55).attr('stroke','none');hideTip()});
-
-  let animated=false;
-  const obs=new IntersectionObserver(entries=>{
-    if(entries[0].isIntersecting&&!animated){animated=true;circles.transition().duration(600).delay(()=>Math.random()*400).attr('r',d=>d.pr)}
-  },{threshold:.25});
-  obs.observe(document.getElementById('sec5'));
-
-  d3.select('#bee-controls').selectAll('button').on('click',function(){
-    d3.select('#bee-controls').selectAll('button').classed('active',false);
-    d3.select(this).classed('active',true);
-    const f=d3.select(this).attr('data-filter');
-    circles.transition().duration(350)
-      .attr('opacity',d=>{if(f==='all')return .55;if(f==='hbcu')return d.hbcu===1?.7:.04;return d.control===+f?.7:.04})
-      .attr('r',d=>{if(f==='all')return d.pr;if(f==='hbcu')return d.hbcu===1?d.pr:d.pr*.3;return d.control===+f?d.pr:d.pr*.3});
-  });
-}
-</script>
-</body>
+    <script type="module" src="main.js"></script>
+  </body>
 </html>
