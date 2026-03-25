@@ -1,0 +1,1 @@
+Using live server extension on VSCode run go live on index.html
