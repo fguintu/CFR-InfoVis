@@ -131,68 +131,56 @@
         <div class="vis-col reveal">
           <!-- Game Interface (shown initially) -->
           <div id="gender-game-overlay" style="display: none">
-            <h3 style="font-size: 1.3rem; margin-bottom: 16px; color: #1a1a1a">
-              Guess the wage gap
-            </h3>
-            <p style="font-size: 0.9rem; color: #666; margin-bottom: 12px">
-              What is the annual salary difference between men and women 10
-              years after graduation?
-            </p>
-            <div style="display: flex; gap: 10px; margin-bottom: 12px">
-              <input
-                type="number"
-                id="gap-guess"
-                placeholder="Enter amount ($)"
+            <div class="vis-col">
+              <h2 style="font-size: 1.5rem; margin-bottom: 12px">
+                Guess the gap
+              </h2>
+
+              <p style="margin-bottom: 20px">
+                Estimate the earnings gap between men and women 10 years after
+                graduation.
+              </p>
+
+              <div class="subcontrols" style="margin-bottom: 20px">
+                <label
+                  class="ctl input-with-symbol"
+                  style="flex: 1; position: relative"
+                >
+                  <span>Your Guess</span>
+                  <input
+                    type="text"
+                    id="gap-guess"
+                    placeholder="15,000"
+                    style="
+                      background: transparent;
+                      border: 1px solid #c5bfb3;
+                      color: #1a1a1a;
+                      padding: 8px 10px 8px 25px; /* Added 25px left padding for the $ */
+                      border-radius: 2px;
+                      font-size: 0.85rem;
+                      width: 100%;
+                      font-family: Helvetica, Arial, sans-serif;
+                    "
+                  />
+                </label>
+              </div>
+
+              <div class="controls">
+                <button id="btn-guess">Submit Guess</button>
+                <button id="btn-reveal">Reveal Answer</button>
+              </div>
+
+              <div
+                id="game-feedback"
+                class="microcopy"
                 style="
-                  flex: 1;
-                  padding: 10px;
-                  border: 1px solid #c5bfb3;
-                  border-radius: 2px;
-                  font-size: 0.95rem;
+                  font-weight: 700;
+                  color: #8b2500;
+                  margin-top: 15px;
+                  min-height: 1.5em;
                 "
-              />
+              ></div>
             </div>
-            <div style="display: flex; gap: 8px; margin-bottom: 12px">
-              <button
-                id="btn-guess"
-                style="
-                  padding: 8px 16px;
-                  background: #8b2500;
-                  color: white;
-                  border: none;
-                  border-radius: 2px;
-                  cursor: pointer;
-                  font-size: 0.9rem;
-                  font-weight: 600;
-                "
-              >
-                Guess
-              </button>
-              <button
-                id="btn-reveal"
-                style="
-                  padding: 8px 16px;
-                  background: #6a6560;
-                  color: white;
-                  border: none;
-                  border-radius: 2px;
-                  cursor: pointer;
-                  font-size: 0.9rem;
-                  font-weight: 600;
-                "
-              >
-                Reveal Answer
-              </button>
-            </div>
-            <div
-              id="game-feedback"
-              style="
-                font-size: 0.95rem;
-                color: #666;
-                min-height: 20px;
-                font-weight: 600;
-              "
-            ></div>
           </div>
 
           <!-- Chart Interface (hidden initially) -->

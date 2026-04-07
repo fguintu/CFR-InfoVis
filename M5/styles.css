@@ -403,3 +403,27 @@ svg text {
     max-width: 100%;
   }
 }
+
+/* Permanent $ Symbol */
+.input-with-symbol::after {
+  content: "$";
+  position: absolute;
+  left: 10px;
+  bottom: 9px; /* Aligns with the input text baseline */
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 0.85rem;
+  color: #1a1a1a;
+  pointer-events: none; /* Allows clicking "through" the symbol to the input */
+}
+
+@keyframes highlight-fade {
+  0% { background-color: rgba(139, 37, 0, 0.2); } /* Faint version of your red */
+  100% { background-color: transparent; }
+}
+
+.new-feedback {
+  display: inline-block;
+  animation: highlight-fade 0.8s ease-out;
+  padding: 2px 5px;
+  border-radius: 2px;
+}

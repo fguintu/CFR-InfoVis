@@ -1,5 +1,16 @@
 import { med, fmt$, C, showTip, hideTip } from "../utils.js";
 
+const gapInput = document.getElementById("gap-guess");
+
+gapInput.addEventListener("input", function (e) {
+  // 1. Remove all non-digits
+  let value = e.target.value.replace(/\D/g, "");
+
+  // 2. Add commas every 3 digits
+  // This regex looks for groups of 3 and inserts a comma
+  e.target.value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+});
+
 export function initS2(groups) {
   const { all: rows } = groups;
 
@@ -25,7 +36,7 @@ export function initS2(groups) {
 
     // Guess button handler
     document.getElementById("btn-guess").addEventListener("click", () => {
-      const guess = parseInt(document.getElementById("gap-guess").value, 10);
+      const guess = gapInput.value.replace(/,/g, "");
       const feedback = document.getElementById("game-feedback");
 
       if (isNaN(guess) || guess < 0) {
@@ -58,6 +69,11 @@ export function initS2(groups) {
           feedback.style.color = "#666";
         }
       }
+
+      const fb = document.getElementById("game-feedback");
+      fb.classList.remove("new-feedback");
+      void fb.offsetWidth; // Trigger reflow to restart animation
+      fb.classList.add("new-feedback");
 
       lastDiff = currentDiff;
     });
