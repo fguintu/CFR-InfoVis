@@ -417,8 +417,12 @@ svg text {
 }
 
 @keyframes highlight-fade {
-  0% { background-color: rgba(139, 37, 0, 0.2); } /* Faint version of your red */
-  100% { background-color: transparent; }
+  0% {
+    background-color: rgba(139, 37, 0, 0.2);
+  } /* Faint version of your red */
+  100% {
+    background-color: transparent;
+  }
 }
 
 .new-feedback {
@@ -426,4 +430,62 @@ svg text {
   animation: highlight-fade 0.8s ease-out;
   padding: 2px 5px;
   border-radius: 2px;
+}
+
+.blur-text {
+  display: inline-block;
+  filter: blur(6px);
+  background: linear-gradient(
+    110deg,
+    rgba(0, 0, 0, 0.1) 20%,
+    rgba(255, 255, 255, 0.4) 50%,
+    rgba(0, 0, 0, 0.1) 80%
+  );
+  background-size: 200% 100%;
+  border-radius: 4px;
+  padding: 0 6px;
+  color: transparent; /* Hides the actual text color to prevent silhouette reading */
+  transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+  user-select: none;
+  cursor: help;
+
+  /* Running both the shimmer and the pulse */
+  animation:
+    shimmer-reveal 2.5s infinite linear,
+    breathing-glow 2s infinite ease-in-out;
+}
+
+/* Moving the light sweep from left to right */
+@keyframes shimmer-reveal {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Subtle scaling and blur variation */
+@keyframes breathing-glow {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: blur(6px);
+    box-shadow: 0 0 0px rgba(0, 0, 0, 0);
+  }
+  50% {
+    transform: scale(1.05);
+    filter: blur(4px);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* The "Reveal" State */
+.unblurred {
+  filter: blur(0) !important;
+  background: transparent !important;
+  color: inherit !important; /* Bring back the text color */
+  animation: none !important;
+  transform: scale(1) !important;
+  box-shadow: none !important;
 }

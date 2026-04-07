@@ -54,8 +54,19 @@
         </div>
         <div class="vis-col reveal">
           <div class="controls" id="inst-controls">
-            <button class="active" data-view="grouped">Debt vs Earnings</button>
-            <button data-view="ratio">Debt-to-Earnings Ratio</button>
+            <button id="btn-debt" class="active" data-view="grouped">Debt vs Earnings</button>
+            <button id="btn-ratio" data-view="ratio">Debt-to-Earnings Ratio</button>
+          </div>
+          <div id="vis-institution"></div>
+          <div id="part1-legend" style="margin-bottom: 30px" class="legend">
+            <div class="legend-item">
+              <div class="legend-sw" style="background: #b33"></div>
+              Median Grad Debt
+            </div>
+            <div class="legend-item">
+              <div class="legend-sw" style="background: #2a6496"></div>
+              Median Earnings (6yr)
+            </div>
           </div>
           <div class="subcontrols" id="inst-subcontrols">
             <label class="ctl">
@@ -90,17 +101,6 @@
           <div class="microcopy" id="s1-hint">
             Tip: hover for details, click a bar group to pin it, and scrub
             earnings year to see how “returns” shift over time.
-          </div>
-          <div id="vis-institution"></div>
-          <div class="legend">
-            <div class="legend-item">
-              <div class="legend-sw" style="background: #b33"></div>
-              Median Grad Debt
-            </div>
-            <div class="legend-item">
-              <div class="legend-sw" style="background: #2a6496"></div>
-              Median Earnings (6yr)
-            </div>
           </div>
         </div>
       </div>

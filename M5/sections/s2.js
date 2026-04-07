@@ -27,6 +27,12 @@ export function initS2(groups) {
     const actualGap = Math.round(last.male - last.female);
     const cents = ((last.female / last.male) * 100).toFixed(1);
 
+    document.getElementById("callout2").innerHTML =
+      `Female graduates earn approximately <span class="blur-text secret-val">${cents}</span> cents for every dollar their male peers make. 
+       By ${last.yr} years out, women earn <span class="blur-text secret-val">${fmt$(last.female)}</span> vs 
+       <span class="blur-text secret-val">${fmt$(last.male)}</span> for men — 
+       a gap of <span class="blur-text secret-val">${fmt$(actualGap)}</span> annually.`;
+
     // Show game overlay, hide chart
     document.getElementById("gender-game-overlay").style.display = "block";
     document.getElementById("gender-vis-wrapper").style.display = "none";
@@ -39,43 +45,66 @@ export function initS2(groups) {
       const guess = gapInput.value.replace(/,/g, "");
       const feedback = document.getElementById("game-feedback");
 
-      if (isNaN(guess) || guess < 0) {
-        feedback.textContent = "Please enter a valid number.";
+      if (guess === "9412") {
+        feedback.textContent = "Correct!";
         feedback.style.color = "#b33";
-        return;
-      }
 
-      const currentDiff = Math.abs(guess - actualGap);
+        const fb = document.getElementById("game-feedback");
+        fb.classList.remove("new-feedback");
+        void fb.offsetWidth; // Trigger reflow to restart animation
+        fb.classList.add("new-feedback");
 
-      if (lastDiff === null) {
-        // First guess
-        if (currentDiff <= 500) {
-          feedback.textContent = "Right direction!";
-          feedback.style.color = "#2a6496";
-        } else {
-          feedback.textContent = "Way off!";
-          feedback.style.color = "#b33";
-        }
+        setTimeout(() => {
+          document.getElementById("gender-game-overlay").style.display = "none";
+          document.getElementById("gender-vis-wrapper").style.display = "block";
+
+          // Update callout with full info
+          document.querySelectorAll(".secret-val").forEach((el) => {
+            el.classList.add("unblurred");
+          });
+
+          // Draw the chart
+          drawS2(s2);
+        }, 1200);
       } else {
-        // Subsequent guesses
-        if (currentDiff < lastDiff) {
-          feedback.textContent = "🔥 Hotter!";
-          feedback.style.color = "#d9534f";
-        } else if (currentDiff > lastDiff) {
-          feedback.textContent = "❄️ Colder";
-          feedback.style.color = "#5bc0de";
-        } else {
-          feedback.textContent = "Same distance";
-          feedback.style.color = "#666";
+        if (isNaN(guess) || guess < 0) {
+          feedback.textContent = "Please enter a valid number.";
+          feedback.style.color = "#b33";
+          return;
         }
+
+        const currentDiff = Math.abs(guess - actualGap);
+
+        if (lastDiff === null) {
+          // First guess
+          if (currentDiff <= 500) {
+            feedback.textContent = "Right direction!";
+            feedback.style.color = "#2a6496";
+          } else {
+            feedback.textContent = "Way off!";
+            feedback.style.color = "#b33";
+          }
+        } else {
+          // Subsequent guesses
+          if (currentDiff < lastDiff) {
+            feedback.textContent = "🔥 Hotter!";
+            feedback.style.color = "#d9534f";
+          } else if (currentDiff > lastDiff) {
+            feedback.textContent = "❄️ Colder";
+            feedback.style.color = "#5bc0de";
+          } else {
+            feedback.textContent = "Same distance";
+            feedback.style.color = "#666";
+          }
+        }
+
+        const fb = document.getElementById("game-feedback");
+        fb.classList.remove("new-feedback");
+        void fb.offsetWidth; // Trigger reflow to restart animation
+        fb.classList.add("new-feedback");
+
+        lastDiff = currentDiff;
       }
-
-      const fb = document.getElementById("game-feedback");
-      fb.classList.remove("new-feedback");
-      void fb.offsetWidth; // Trigger reflow to restart animation
-      fb.classList.add("new-feedback");
-
-      lastDiff = currentDiff;
     });
 
     // Reveal button handler
@@ -85,8 +114,9 @@ export function initS2(groups) {
       document.getElementById("gender-vis-wrapper").style.display = "block";
 
       // Update callout with full info
-      document.getElementById("callout2").textContent =
-        `Female graduates earn approximately ${cents} cents for every dollar their male peers make. By ${last.yr} years out, women earn ${fmt$(last.female)} vs ${fmt$(last.male)} for men — a gap of ${fmt$(actualGap)} annually.`;
+      document.querySelectorAll(".secret-val").forEach((el) => {
+        el.classList.add("unblurred");
+      });
 
       // Draw the chart
       drawS2(s2);

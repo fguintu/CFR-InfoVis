@@ -52,7 +52,9 @@ export function initS1(groups) {
         debt: med(g.rows.map(getDebt)),
         earn: med(g.rows.map((r) => r[earnKey])),
       }))
-      .filter((d) => !isNaN(d.debt) && !isNaN(d.earn) && d.earn > 0 && d.debt >= 0);
+      .filter(
+        (d) => !isNaN(d.debt) && !isNaN(d.earn) && d.earn > 0 && d.debt >= 0,
+      );
     return out;
   }
 
@@ -71,14 +73,19 @@ export function initS1(groups) {
 
     if (chosen) {
       const ratio = chosen.debt / chosen.earn;
-      el.textContent =
-        `${chosen.label} at year ${yr}: ${metric} is ${fmt$(chosen.debt)} and median earnings are ${fmt$(chosen.earn)}. Debt to earnings ratio is ${fmtPct(ratio)}. Selection is pinned from the chart.`;
+      el.textContent = `${chosen.label} at year ${yr}: ${metric} is ${fmt$(chosen.debt)} and median earnings are ${fmt$(chosen.earn)}. Debt to earnings ratio is ${fmtPct(ratio)}. Selection is pinned from the chart.`;
       return;
     }
 
-    el.textContent =
-      `At year ${yr}, community college graduates show the lowest ${metric} at ${fmt$(ccD.debt)}. HBCU students carry ${fmt$(hb.debt)}, comparable to private nonprofits at ${fmt$(pv.debt)}, but earn ${fmt$(hb.earn)} versus ${fmt$(pv.earn)}.`;
+    el.textContent = `At year ${yr}, community college graduates show the lowest ${metric} at ${fmt$(ccD.debt)}. HBCU students carry ${fmt$(hb.debt)}, comparable to private nonprofits at ${fmt$(pv.debt)}, but earn ${fmt$(hb.earn)} versus ${fmt$(pv.earn)}.`;
   }
+
+  document.getElementById("btn-debt").addEventListener("click", () => {
+    document.getElementById("part1-legend").style.opacity = "1";
+  });
+  document.getElementById("btn-ratio").addEventListener("click", () => {
+    document.getElementById("part1-legend").style.opacity = "0";
+  });
 
   const api = drawS1(() => state, computeData);
   updateCallout(computeData());
@@ -113,7 +120,8 @@ export function initS1(groups) {
     .on("click", function () {
       d3.select("#inst-controls").selectAll("button").classed("active", false);
       d3.select(this).classed("active", true);
-      state.view = d3.select(this).attr("data-view") === "grouped" ? "grouped" : "ratio";
+      state.view =
+        d3.select(this).attr("data-view") === "grouped" ? "grouped" : "ratio";
       api.update();
     });
 
@@ -129,8 +137,8 @@ export function initS1(groups) {
 // ════════════════════════════════
 function drawS1(getState, getData) {
   const W = 600,
-    H = 440,
-    M = { t: 24, r: 24, b: 110, l: 58 },
+    H = 260,
+    M = { t: 16, r: 16, b: 44, l: 16 },
     w = W - M.l - M.r,
     h = H - M.t - M.b;
   const svg = d3
@@ -169,9 +177,9 @@ function drawS1(getState, getData) {
     const all = g.selectAll(".bg");
     all.classed("is-pinned", (d) => pinned && d.label === pinned);
     all.classed("is-dimmed", (d) => pinned && d.label !== pinned);
-    all.selectAll("rect").attr("opacity", (d) =>
-      pinned ? (d.label === pinned ? 1 : 0.25) : 1,
-    );
+    all
+      .selectAll("rect")
+      .attr("opacity", (d) => (pinned ? (d.label === pinned ? 1 : 0.25) : 1));
     g.selectAll(".rbar").attr("opacity", (d) =>
       pinned ? (d.label === pinned ? 1 : 0.25) : 1,
     );
@@ -239,7 +247,9 @@ function drawS1(getState, getData) {
       )
       .on("mouseout", hideTip);
     const mg = en.merge(grp);
-    mg.transition().duration(350).attr("transform", (d) => `translate(${x0(d.label)},0)`);
+    mg.transition()
+      .duration(350)
+      .attr("transform", (d) => `translate(${x0(d.label)},0)`);
     mg.select(".bd")
       .transition()
       .duration(600)
