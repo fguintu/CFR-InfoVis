@@ -1,21 +1,22 @@
 // sections/s4.js
 import { med, fmt$, C, showTip, hideTip } from "../utils.js";
 
-let _timer = null; // module-level so we can stop on re-init
-let _observer = null; // IntersectionObserver for auto-start
+// ════════════════════════════════════════════
+// SECTION 4: Animated Racetrack
+// ════════════════════════════════════════════
+
+let _timer = null; // module-level so it can be stopped on re-init
+let _observer = null;
 
 export function initS4(groups) {
   const { all: rows } = groups;
 
-  // ── Section 4 ──
   const ep6All = med(rows.map((r) => r._EP6));
 
-  // Use income-appropriate repayment shares: higher earners can devote a
-  // larger fraction of income to debt service, which is more realistic and
-  // produces meaningful visual spread between groups.
+  // Income-appropriate repayment shares (higher earners can devote more)
   const repayShare = { hi: 0.15, md: 0.1, lo: 0.06, fg: 0.05 };
 
-  function estYr(col, share) {
+  function estYears(col, share) {
     const d = med(rows.map((r) => r[col]));
     return !isNaN(d) && !isNaN(ep6All) && ep6All > 0
       ? d / (ep6All * share)
@@ -29,7 +30,7 @@ export function initS4(groups) {
       color: C.blue,
       debt: med(rows.map((r) => r._HI_INC_DEBT_MDN)),
       earn: ep6All,
-      years: estYr("_HI_INC_DEBT_MDN", repayShare.hi),
+      years: estYears("_HI_INC_DEBT_MDN", repayShare.hi),
     },
     {
       id: "B",
@@ -37,7 +38,7 @@ export function initS4(groups) {
       color: C.gold,
       debt: med(rows.map((r) => r._MD_INC_DEBT_MDN)),
       earn: ep6All,
-      years: estYr("_MD_INC_DEBT_MDN", repayShare.md),
+      years: estYears("_MD_INC_DEBT_MDN", repayShare.md),
     },
     {
       id: "C",
@@ -45,7 +46,7 @@ export function initS4(groups) {
       color: C.red,
       debt: med(rows.map((r) => r._LO_INC_DEBT_MDN)),
       earn: ep6All,
-      years: estYr("_LO_INC_DEBT_MDN", repayShare.lo),
+      years: estYears("_LO_INC_DEBT_MDN", repayShare.lo),
     },
     {
       id: "D",
@@ -53,27 +54,28 @@ export function initS4(groups) {
       color: C.purple,
       debt: med(rows.map((r) => r._FIRSTGEN_DEBT_MDN)),
       earn: ep6All,
-      years: estYr("_FIRSTGEN_DEBT_MDN", repayShare.fg),
+      years: estYears("_FIRSTGEN_DEBT_MDN", repayShare.fg),
     },
   ].filter((d) => !isNaN(d.years));
 
   if (s4.length) {
-    const fast = s4.reduce((a, b) => (a.years < b.years ? a : b)),
-      slow = s4.reduce((a, b) => (a.years > b.years ? a : b));
+    const fast = s4.reduce((a, b) => (a.years < b.years ? a : b));
+    const slow = s4.reduce((a, b) => (a.years > b.years ? a : b));
     document.getElementById("callout4").textContent =
-      `${fast.label} graduates could be debt-free in ~${fast.years.toFixed(0)} years. ${slow.label} borrowers face ~${slow.years.toFixed(0)} years — delaying homeownership, retirement savings, and wealth-building for over a decade longer.`;
+      `${fast.label} graduates could be debt-free in ~${fast.years.toFixed(0)} years. ` +
+      `${slow.label} borrowers face ~${slow.years.toFixed(0)} years — delaying homeownership, ` +
+      `retirement savings, and wealth-building for over a decade longer.`;
   }
+
   drawS4(s4);
 }
 
-// ════════════════════════════════
-// SECTION 4: Animated Racetrack
-// ════════════════════════════════
+// ── Chart ──
 
 function drawS4(data) {
   if (!data.length) return;
 
-  // ── Cleanup previous ──
+  // ── Cleanup previous instance ──
   if (_timer) {
     _timer.stop();
     _timer = null;
@@ -82,13 +84,14 @@ function drawS4(data) {
     _observer.disconnect();
     _observer = null;
   }
+
   const container = d3.select("#vis-racetrack-controls");
   container.selectAll("*").remove();
 
   // ── Dimensions ──
   const W = 600,
-    H = 440,
-    cx = W / 2,
+    H = 440;
+  const cx = W / 2,
     cy = H / 2;
   const RX = 230,
     RY = 150;
@@ -100,11 +103,12 @@ function drawS4(data) {
     .attr("width", "100%")
     .style("overflow", "visible");
 
-// ── Controls ──
+  // ── Controls ──
   const ctrlDiv = container.append("div").attr("class", "s4-controls");
 
   let paused = true;
   let started = false;
+
   const playBtn = ctrlDiv
     .append("button")
     .text("Play")
@@ -135,7 +139,7 @@ function drawS4(data) {
       speedVal.text(speedMul + "x");
     });
 
-  // ── Explanatory microcopy ──
+  // ── Microcopy ──
   container
     .append("div")
     .attr("class", "microcopy")
@@ -152,11 +156,12 @@ function drawS4(data) {
     const a = (2 * Math.PI * i) / N_PTS - Math.PI / 2;
     trackPts.push([cx + RX * Math.cos(a), cy + RY * Math.sin(a)]);
   }
+
   const lineGen = d3.line().curve(d3.curveCardinalClosed.tension(0.85));
   const trackD = lineGen(trackPts);
-
-  // Outer border
   const laneW = 28;
+
+  // ── Track layers ──
   svg
     .append("path")
     .attr("d", trackD)
@@ -164,7 +169,6 @@ function drawS4(data) {
     .attr("stroke", "#e5e0d8")
     .attr("stroke-width", laneW * 2 + 2);
 
-  // Inner fill
   const innerPts = [];
   for (let i = 0; i < N_PTS; i++) {
     const a = (2 * Math.PI * i) / N_PTS - Math.PI / 2;
@@ -178,16 +182,12 @@ function drawS4(data) {
     .attr("d", lineGen(innerPts))
     .attr("fill", "#faf8f4")
     .attr("stroke", "none");
-
-  // Track surface
   svg
     .append("path")
     .attr("d", trackD)
     .attr("fill", "none")
     .attr("stroke", "#ece8e0")
     .attr("stroke-width", laneW * 2);
-
-  // Center-line (dashed)
   svg
     .append("path")
     .attr("d", trackD)
@@ -196,7 +196,7 @@ function drawS4(data) {
     .attr("stroke-width", 1)
     .attr("stroke-dasharray", "8,6");
 
-  // Hidden path for getPointAtLength
+  // ── Hidden path for getPointAtLength ──
   const trackPath = svg
     .append("path")
     .attr("d", trackD)
@@ -205,7 +205,7 @@ function drawS4(data) {
   const pathNode = trackPath.node();
   const trackLen = pathNode.getTotalLength();
 
-  // ── Start / Lap line ──
+  // ── Start/lap line ──
   const finPt = pathNode.getPointAtLength(0);
   svg
     .append("line")
@@ -229,19 +229,23 @@ function drawS4(data) {
     .text("START / LAP LINE");
 
   // ── Car state ──
-  // Speed: 1 lap per (years) seconds of animation.
-  // So a car with years=5 does 1 lap every 5 seconds; years=10 does 1 lap every 10 seconds.
-  // This means speed in px/s = trackLen / years.
+  // Speed = trackLen / years: fewer years → faster car
   const cars = data.map((d) => ({
     ...d,
     dist: 0,
-    speed: trackLen / d.years, // px per second — fewer years = faster
+    speed: trackLen / d.years,
     lap: 0,
     pinned: false,
   }));
 
-  // ── Lap scoreboard (center of track) — bound to cars so lap updates work ──
+  // Stagger starts slightly so cars don't overlap
+  cars.forEach((c, i) => {
+    c.dist = i * 50;
+  });
+
+  // ── Scoreboard ──
   const scoreG = svg.append("g").attr("transform", `translate(${cx},${cy})`);
+
   scoreG
     .append("text")
     .attr("text-anchor", "middle")
@@ -258,7 +262,8 @@ function drawS4(data) {
     .enter()
     .append("g")
     .attr("class", "score-row")
-    .attr("transform", (d, i) => `translate(0,${-30 + i * 22})`);
+    .attr("transform", (_, i) => `translate(0,${-30 + i * 22})`);
+
   scoreRows
     .append("rect")
     .attr("x", -8)
@@ -293,11 +298,6 @@ function drawS4(data) {
     .attr("fill", "#999")
     .attr("font-size", "8px")
     .text((d) => d.label);
-
-  // Offset slightly so cars don't stack at the start
-  cars.forEach((c, i) => {
-    c.dist = i * 50;
-  });
 
   // ── Car groups ──
   const carGs = svg
@@ -337,7 +337,6 @@ function drawS4(data) {
     .attr("font-weight", "700")
     .text((d) => d.id);
 
-  // Name label above car
   carGs
     .append("text")
     .attr("class", "car-name-label")
@@ -348,7 +347,7 @@ function drawS4(data) {
     .attr("font-weight", "600")
     .text((d) => d.label);
 
-  // ── Hover ──
+  // ── Tooltip ──
   const tipHtml = (d) =>
     `<b>${d.label}</b><br>Median Debt: ${fmt$(d.debt)}<br>` +
     `Median Earnings (6yr): ${fmt$(d.earn)}<br>` +
@@ -368,6 +367,7 @@ function drawS4(data) {
 
   // ── Pin / detail panel ──
   let pinnedCar = null;
+
   const panelDiv = container
     .append("div")
     .attr("class", "s4-detail-panel")
@@ -389,12 +389,14 @@ function drawS4(data) {
     d.pinned = true;
     pinnedCar = d;
     carGs.select(".car-ring").attr("opacity", (c) => (c === d ? 1 : 0));
+
     const fastest = cars.reduce((a, b) => (a.years < b.years ? a : b));
     const diff = d.years - fastest.years;
     const sentence =
       diff < 0.5
         ? `${d.label} borrowers repay fastest among these groups.`
         : `${d.label} borrowers take ~${diff.toFixed(0)} more years than ${fastest.label} graduates — years of delayed savings and wealth-building.`;
+
     panelDiv
       .html(
         `<span class="panel-close">&times;</span>` +
@@ -407,17 +409,14 @@ function drawS4(data) {
       .style("display", "block")
       .style("left", "10px")
       .style("bottom", "10px");
+
     panelDiv.select(".panel-close").on("click", () => unpin());
     hideTip();
   }
 
   carGs.on("click", (e, d) => {
     e.stopPropagation();
-    if (d.pinned) {
-      unpin();
-      return;
-    }
-    pinCar(d);
+    d.pinned ? unpin() : pinCar(d);
   });
   svg.on("click", () => unpin());
 
@@ -452,7 +451,7 @@ function drawS4(data) {
     startRace();
   }
 
-  // ── Start (continuous loop — never stops) ──
+  // ── Start (continuous loop) ──
   function startRace() {
     if (started) return;
     started = true;
@@ -481,8 +480,6 @@ function drawS4(data) {
       carGs.each(function (d) {
         positionCar(d3.select(this), d);
       });
-
-      // Update scoreboard
       scoreG.selectAll(".score-laps").text((d) => d.lap);
     });
   }
@@ -492,7 +489,7 @@ function drawS4(data) {
     positionCar(d3.select(this), d);
   });
 
-  // ── Auto-start when section scrolls into view ──
+  // ── Auto-start on scroll into view ──
   _observer = new IntersectionObserver(
     (entries) => {
       entries.forEach((e) => {

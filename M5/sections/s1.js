@@ -1,11 +1,13 @@
 // sections/s1.js
 import { med, fmt$, fmtPct, C, showTip, hideTip } from "../utils.js";
 
-// Called from main.js after CSV loads, receives the parsed groups
+// ════════════════════════════════════════════
+// SECTION 1: Debt / Income by Institution Type
+// ════════════════════════════════════════════
+
 export function initS1(groups) {
   const { cc, pub4, priv4, fp4, hbcus } = groups;
 
-  // ── Section 1 state ──
   const groupMap = [
     { id: "cc", label: "Community College", rows: cc },
     { id: "pub4", label: "Public 4-Year", rows: pub4 },
@@ -23,29 +25,35 @@ export function initS1(groups) {
     view: "grouped",
     debtMetric: debtMetricEl ? debtMetricEl.value : "grad",
     earnYear: earnYearEl ? +earnYearEl.value : 6,
-    pinned: null, // label string
+    pinned: null,
   };
 
+  // ── Helpers ──
+
   function debtAccessor(metric) {
-    if (metric === "lo") return (r) => r._LO_INC_DEBT_MDN;
-    if (metric === "md") return (r) => r._MD_INC_DEBT_MDN;
-    if (metric === "hi") return (r) => r._HI_INC_DEBT_MDN;
-    if (metric === "firstgen") return (r) => r._FIRSTGEN_DEBT_MDN;
-    return (r) => r._GRAD_DEBT_MDN;
+    const map = {
+      lo: (r) => r._LO_INC_DEBT_MDN,
+      md: (r) => r._MD_INC_DEBT_MDN,
+      hi: (r) => r._HI_INC_DEBT_MDN,
+      firstgen: (r) => r._FIRSTGEN_DEBT_MDN,
+    };
+    return map[metric] || ((r) => r._GRAD_DEBT_MDN);
   }
 
   function debtMetricLabel(metric) {
-    if (metric === "lo") return "low-income debt";
-    if (metric === "md") return "middle-income debt";
-    if (metric === "hi") return "high-income debt";
-    if (metric === "firstgen") return "first-gen debt";
-    return "median grad debt";
+    const labels = {
+      lo: "low-income debt",
+      md: "middle-income debt",
+      hi: "high-income debt",
+      firstgen: "first-gen debt",
+    };
+    return labels[metric] || "median grad debt";
   }
 
   function computeData() {
     const getDebt = debtAccessor(state.debtMetric);
     const earnKey = `_EP${state.earnYear}`;
-    const out = groupMap
+    return groupMap
       .map((g) => ({
         id: g.id,
         label: g.label,
@@ -55,42 +63,51 @@ export function initS1(groups) {
       .filter(
         (d) => !isNaN(d.debt) && !isNaN(d.earn) && d.earn > 0 && d.debt >= 0,
       );
-    return out;
   }
 
   function updateCallout(data) {
-    const chosen =
-      (state.pinned && data.find((d) => d.label === state.pinned)) || null;
+    const el = document.getElementById("callout1");
     const pv = data.find((d) => d.label === "Private Nonprofit");
     const hb = data.find((d) => d.label === "HBCU");
     const ccD = data.find((d) => d.label === "Community College");
 
+    if (!el || !pv || !hb || !ccD) return;
+
+    const pinned = state.pinned && data.find((d) => d.label === state.pinned);
     const metric = debtMetricLabel(state.debtMetric);
     const yr = state.earnYear;
 
-    const el = document.getElementById("callout1");
-    if (!el || !pv || !hb || !ccD) return;
-
-    if (chosen) {
-      const ratio = chosen.debt / chosen.earn;
-      el.textContent = `${chosen.label} at year ${yr}: ${metric} is ${fmt$(chosen.debt)} and median earnings are ${fmt$(chosen.earn)}. Debt to earnings ratio is ${fmtPct(ratio)}. Selection is pinned from the chart.`;
+    if (pinned) {
+      el.textContent =
+        `${pinned.label} at year ${yr}: ${metric} is ${fmt$(pinned.debt)} and median earnings ` +
+        `are ${fmt$(pinned.earn)}. Debt to earnings ratio is ${fmtPct(pinned.debt / pinned.earn)}. ` +
+        `Selection is pinned from the chart.`;
       return;
     }
 
-    el.textContent = `At year ${yr}, community college graduates show the lowest ${metric} at ${fmt$(ccD.debt)}. HBCU students carry ${fmt$(hb.debt)}, comparable to private nonprofits at ${fmt$(pv.debt)}, but earn ${fmt$(hb.earn)} versus ${fmt$(pv.earn)}.`;
+    el.textContent =
+      `At year ${yr}, community college graduates show the lowest ${metric} at ${fmt$(ccD.debt)}. ` +
+      `HBCU students carry ${fmt$(hb.debt)}, comparable to private nonprofits at ${fmt$(pv.debt)}, ` +
+      `but earn ${fmt$(hb.earn)} versus ${fmt$(pv.earn)}.`;
   }
+
+  // ── Legend visibility ──
 
   document.getElementById("btn-debt").addEventListener("click", () => {
     document.getElementById("part1-legend").style.opacity = "1";
   });
+
   document.getElementById("btn-ratio").addEventListener("click", () => {
     document.getElementById("part1-legend").style.opacity = "0";
   });
 
+  // ── Init chart ──
+
   const api = drawS1(() => state, computeData);
   updateCallout(computeData());
 
-  // Controls wiring
+  // ── Control wiring ──
+
   if (earnYearEl && yearLabelEl) {
     yearLabelEl.textContent = String(state.earnYear);
     earnYearEl.addEventListener("input", () => {
@@ -100,6 +117,7 @@ export function initS1(groups) {
       updateCallout(computeData());
     });
   }
+
   if (debtMetricEl) {
     debtMetricEl.addEventListener("change", () => {
       state.debtMetric = debtMetricEl.value;
@@ -107,22 +125,20 @@ export function initS1(groups) {
       updateCallout(computeData());
     });
   }
+
   if (clearPinEl) {
     clearPinEl.addEventListener("click", () => {
-      // 1. Reset the UI elements to default values
       if (debtMetricEl) debtMetricEl.value = "grad";
       if (earnYearEl) earnYearEl.value = 6;
       if (yearLabelEl) yearLabelEl.textContent = "6";
 
-      // 2. Reset the internal state object
       state.pinned = null;
       state.debtMetric = "grad";
       state.earnYear = 6;
 
-      // 3. Trigger the visual updates
-      api.updatePin(null); // Clears the highlighting in the D3 chart
-      api.update(); // Re-renders bars based on the reset debtMetric/year
-      updateCallout(computeData()); // Updates the text description
+      api.updatePin(null);
+      api.update();
+      updateCallout(computeData());
     });
   }
 
@@ -136,28 +152,28 @@ export function initS1(groups) {
       api.update();
     });
 
-  // Let chart inform pinned selection back to the callout
   api.onPin((label) => {
     state.pinned = label;
     updateCallout(computeData());
   });
 }
 
-// ════════════════════════════════
-// SECTION 1: Institution Type
-// ════════════════════════════════
+// ── Chart ──
+
 function drawS1(getState, getData) {
   const W = 600,
-    H = 260,
-    M = { t: 16, r: 16, b: 44, l: 16 },
-    w = W - M.l - M.r,
-    h = H - M.t - M.b;
+    H = 260;
+  const M = { t: 16, r: 16, b: 44, l: 16 };
+  const w = W - M.l - M.r;
+  const h = H - M.t - M.b;
+
   const svg = d3
     .select("#vis-institution")
     .append("svg")
     .attr("viewBox", `0 0 ${W} ${H}`)
     .attr("width", "100%")
     .style("overflow", "visible");
+
   const g = svg.append("g").attr("transform", `translate(${M.l},${M.t})`);
   const x0 = d3.scaleBand().range([0, w]).padding(0.3);
   const x1 = d3
@@ -168,6 +184,9 @@ function drawS1(getState, getData) {
   const y = d3.scaleLinear().range([h, 0]);
   const xAx = g.append("g").attr("transform", `translate(0,${h})`);
   const yAx = g.append("g");
+
+  let pinned = null;
+  let pinCb = () => {};
 
   function renderAxis() {
     xAx
@@ -180,9 +199,6 @@ function drawS1(getState, getData) {
       .style("font-size", "10px")
       .attr("dy", "1em");
   }
-
-  let pinned = null;
-  let pinCb = () => {};
 
   function applyPinStyles() {
     const all = g.selectAll(".bg");
@@ -202,6 +218,7 @@ function drawS1(getState, getData) {
   function grouped(data) {
     const maxV = d3.max(data, (d) => Math.max(d.debt, d.earn)) * 1.15;
     y.domain([0, maxV]);
+
     yAx
       .transition()
       .duration(500)
@@ -213,9 +230,15 @@ function drawS1(getState, getData) {
       );
     yAx.selectAll("text").attr("fill", "#666");
     yAx.select(".domain").attr("stroke", C.axis);
+
     renderAxis();
     g.selectAll(".rbar,.rlabel").remove();
+
+    const tipHtml = (d) =>
+      `<b>${d.label}</b><br>Debt: ${fmt$(d.debt)}<br>Earnings: ${fmt$(d.earn)}<br>Debt/Earnings: ${fmtPct(d.debt / d.earn)}`;
+
     const grp = g.selectAll(".bg").data(data, (d) => d.label);
+
     const en = grp
       .enter()
       .append("g")
@@ -227,6 +250,7 @@ function drawS1(getState, getData) {
         applyPinStyles();
         pinCb(pinned);
       });
+
     en.append("rect")
       .attr("class", "bd")
       .attr("x", x1("debt"))
@@ -235,13 +259,9 @@ function drawS1(getState, getData) {
       .attr("fill", C.red)
       .attr("y", h)
       .attr("height", 0)
-      .on("mouseover", (e, d) =>
-        showTip(
-          e,
-          `<b>${d.label}</b><br>Debt: ${fmt$(d.debt)}<br>Earnings: ${fmt$(d.earn)}<br>Debt/Earnings: ${fmtPct(d.debt / d.earn)}`,
-        ),
-      )
+      .on("mouseover", (e, d) => showTip(e, tipHtml(d)))
       .on("mouseout", hideTip);
+
     en.append("rect")
       .attr("class", "be")
       .attr("x", x1("earn"))
@@ -250,13 +270,9 @@ function drawS1(getState, getData) {
       .attr("fill", C.blue)
       .attr("y", h)
       .attr("height", 0)
-      .on("mouseover", (e, d) =>
-        showTip(
-          e,
-          `<b>${d.label}</b><br>Debt: ${fmt$(d.debt)}<br>Earnings: ${fmt$(d.earn)}<br>Debt/Earnings: ${fmtPct(d.debt / d.earn)}`,
-        ),
-      )
+      .on("mouseover", (e, d) => showTip(e, tipHtml(d)))
       .on("mouseout", hideTip);
+
     const mg = en.merge(grp);
     mg.transition()
       .duration(350)
@@ -271,6 +287,7 @@ function drawS1(getState, getData) {
       .duration(600)
       .attr("y", (d) => y(d.earn))
       .attr("height", (d) => h - y(d.earn));
+
     grp.exit().remove();
     applyPinStyles();
   }
@@ -279,18 +296,23 @@ function drawS1(getState, getData) {
     const rd = data.map((d) => ({ ...d, ratio: d.debt / d.earn }));
     const mx = d3.max(rd, (d) => d.ratio) * 1.2;
     y.domain([0, mx]);
+
     yAx
       .transition()
       .duration(500)
       .call(d3.axisLeft(y).ticks(5).tickFormat(d3.format(".0%")));
     yAx.selectAll("text").attr("fill", "#666");
+
     g.selectAll(".bd,.be")
       .transition()
       .duration(300)
       .attr("height", 0)
       .attr("y", h);
+
     const color = d3.scaleSequential(d3.interpolateRdYlGn).domain([mx, 0]);
+
     const bars = g.selectAll(".rbar").data(rd, (d) => d.label);
+
     bars
       .enter()
       .append("rect")
@@ -319,8 +341,11 @@ function drawS1(getState, getData) {
       .attr("y", (d) => y(d.ratio))
       .attr("height", (d) => h - y(d.ratio))
       .attr("fill", (d) => color(d.ratio));
+
     bars.exit().remove();
+
     const lbl = g.selectAll(".rlabel").data(rd, (d) => d.label);
+
     lbl
       .enter()
       .append("text")
@@ -337,10 +362,9 @@ function drawS1(getState, getData) {
       .attr("opacity", 1)
       .tween("text", function (d) {
         const i = d3.interpolateNumber(0, d.ratio * 100);
-        return (t) => {
-          d3.select(this).text(i(t).toFixed(0) + "%");
-        };
+        return (t) => d3.select(this).text(i(t).toFixed(0) + "%");
       });
+
     lbl.exit().remove();
     applyPinStyles();
   }

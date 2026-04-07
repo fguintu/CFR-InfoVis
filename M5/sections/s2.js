@@ -1,166 +1,153 @@
+// sections/s2.js
 import { med, fmt$, C, showTip, hideTip } from "../utils.js";
 
-const gapInput = document.getElementById("gap-guess");
-
-gapInput.addEventListener("input", function (e) {
-  // 1. Remove all non-digits
-  let value = e.target.value.replace(/\D/g, "");
-
-  // 2. Add commas every 3 digits
-  // This regex looks for groups of 3 and inserts a comma
-  e.target.value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-});
+// ════════════════════════════════════════════
+// SECTION 2: Gender Earnings Gap
+// ════════════════════════════════════════════
 
 export function initS2(groups) {
   const { all: rows } = groups;
 
-  // ── Section 2 ──
+  // ── Wire up guess-input formatting (deferred to here, after DOM is ready) ──
+  const gapInput = document.getElementById("gap-guess");
+  gapInput.addEventListener("input", (e) => {
+    const digits = e.target.value.replace(/\D/g, "");
+    e.target.value = digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  });
+
+  // ── Build year-over-year earnings data ──
   const s2 = [];
   for (let yr = 6; yr <= 10; yr++) {
-    const m = med(rows.map((r) => r[`_EM${yr}`])),
-      f = med(rows.map((r) => r[`_EF${yr}`]));
-    if (!isNaN(m) && !isNaN(f)) s2.push({ yr, male: m, female: f });
+    const male = med(rows.map((r) => r[`_EM${yr}`]));
+    const female = med(rows.map((r) => r[`_EF${yr}`]));
+    if (!isNaN(male) && !isNaN(female)) s2.push({ yr, male, female });
   }
 
-  if (s2.length) {
-    const last = s2[s2.length - 1];
-    const actualGap = Math.round(last.male - last.female);
-    const cents = ((last.female / last.male) * 100).toFixed(1);
+  if (!s2.length) return;
 
-    document.getElementById("callout2").innerHTML =
-      `Female graduates earn approximately <span class="blur-text secret-val">${cents}</span> cents for every dollar their male peers make. 
-       By ${last.yr} years out, women earn <span class="blur-text secret-val">${fmt$(last.female)}</span> vs 
-       <span class="blur-text secret-val">${fmt$(last.male)}</span> for men — 
-       a gap of <span class="blur-text secret-val">${fmt$(actualGap)}</span> annually.`;
+  const last = s2[s2.length - 1];
+  const actualGap = Math.round(last.male - last.female);
+  const cents = ((last.female / last.male) * 100).toFixed(1);
 
-    // Show game overlay, hide chart
-    document.getElementById("gender-game-overlay").style.display = "block";
-    document.getElementById("gender-vis-wrapper").style.display = "none";
+  // ── Callout (values blurred until reveal) ──
+  document.getElementById("callout2").innerHTML =
+    `Female graduates earn approximately <span class="blur-text secret-val">${cents}</span> cents for every dollar their male peers make. ` +
+    `By ${last.yr} years out, women earn <span class="blur-text secret-val">${fmt$(last.female)}</span> vs ` +
+    `<span class="blur-text secret-val">${fmt$(last.male)}</span> for men — ` +
+    `a gap of <span class="blur-text secret-val">${fmt$(actualGap)}</span> annually.`;
 
-    // Initialize game state
-    let lastDiff = null;
+  // ── Show game, hide chart ──
+  document.getElementById("gender-game-overlay").style.display = "block";
+  document.getElementById("gender-vis-wrapper").style.display = "none";
 
-    // Guess button handler
-    document.getElementById("btn-guess").addEventListener("click", () => {
-      const guess = gapInput.value.replace(/,/g, "");
-      const feedback = document.getElementById("game-feedback");
+  // ── Game state ──
+  let lastDiff = null;
 
-      if (guess === "9412") {
-        feedback.textContent = "Correct!";
-        feedback.style.color = "#b33";
-
-        const fb = document.getElementById("game-feedback");
-        fb.classList.remove("new-feedback");
-        void fb.offsetWidth; // Trigger reflow to restart animation
-        fb.classList.add("new-feedback");
-
-        setTimeout(() => {
-          document.getElementById("gender-game-overlay").style.display = "none";
-          document.getElementById("gender-vis-wrapper").style.display = "block";
-
-          // Update callout with full info
-          document.querySelectorAll(".secret-val").forEach((el) => {
-            el.classList.add("unblurred");
-          });
-
-          // Draw the chart
-          drawS2(s2);
-        }, 1200);
-      } else {
-        if (isNaN(guess) || guess < 0) {
-          feedback.textContent = "Please enter a valid number.";
-          feedback.style.color = "#b33";
-          return;
-        }
-
-        const currentDiff = Math.abs(guess - actualGap);
-
-        if (lastDiff === null) {
-          // First guess
-          if (currentDiff <= 500) {
-            feedback.textContent = "Right direction!";
-            feedback.style.color = "#2a6496";
-          } else {
-            feedback.textContent = "Way off!";
-            feedback.style.color = "#b33";
-          }
-        } else {
-          // Subsequent guesses
-          if (currentDiff < lastDiff) {
-            feedback.textContent = "🔥 Hotter!";
-            feedback.style.color = "#d9534f";
-          } else if (currentDiff > lastDiff) {
-            feedback.textContent = "❄️ Colder";
-            feedback.style.color = "#5bc0de";
-          } else {
-            feedback.textContent = "Same distance";
-            feedback.style.color = "#666";
-          }
-        }
-
-        const fb = document.getElementById("game-feedback");
-        fb.classList.remove("new-feedback");
-        void fb.offsetWidth; // Trigger reflow to restart animation
-        fb.classList.add("new-feedback");
-
-        lastDiff = currentDiff;
-      }
-    });
-
-    // Reveal button handler
-    document.getElementById("btn-reveal").addEventListener("click", () => {
-      // Hide game, show chart
-      document.getElementById("gender-game-overlay").style.display = "none";
-      document.getElementById("gender-vis-wrapper").style.display = "block";
-
-      // Update callout with full info
-      document.querySelectorAll(".secret-val").forEach((el) => {
-        el.classList.add("unblurred");
-      });
-
-      // Draw the chart
-      drawS2(s2);
-    });
-
-    // Allow Enter key to submit guess
-    document.getElementById("gap-guess").addEventListener("keypress", (e) => {
-      if (e.key === "Enter") {
-        document.getElementById("btn-guess").click();
-      }
-    });
+  function revealChart() {
+    document.getElementById("gender-game-overlay").style.display = "none";
+    document.getElementById("gender-vis-wrapper").style.display = "block";
+    document
+      .querySelectorAll(".secret-val")
+      .forEach((el) => el.classList.add("unblurred"));
+    drawS2(s2);
   }
+
+  function flashFeedback(text, color) {
+    const fb = document.getElementById("game-feedback");
+    fb.textContent = text;
+    fb.style.color = color;
+    fb.classList.remove("new-feedback");
+    void fb.offsetWidth; // force reflow to restart animation
+    fb.classList.add("new-feedback");
+  }
+
+  // ── Guess button ──
+  document.getElementById("btn-guess").addEventListener("click", () => {
+    const raw = gapInput.value.replace(/,/g, "");
+    const guess = parseInt(raw, 10);
+
+    if (isNaN(guess) || guess < 0) {
+      flashFeedback("Please enter a valid number.", "#b33");
+      return;
+    }
+
+    if (guess === actualGap) {
+      flashFeedback("Correct!", "#b33");
+      setTimeout(revealChart, 1200);
+      return;
+    }
+
+    const currentDiff = Math.abs(guess - actualGap);
+
+    if (lastDiff === null) {
+      flashFeedback(
+        currentDiff <= 500 ? "Right direction!" : "Way off!",
+        "#b33",
+      );
+    } else if (currentDiff < lastDiff) {
+      flashFeedback("🔥 Hotter!", "#d9534f");
+    } else if (currentDiff > lastDiff) {
+      flashFeedback("❄️ Colder", "#5bc0de");
+    } else {
+      flashFeedback("Same distance", "#666");
+    }
+
+    lastDiff = currentDiff;
+  });
+
+  // ── Reveal button ──
+  document.getElementById("btn-reveal").addEventListener("click", revealChart);
+
+  // ── Enter key shortcut ──
+  gapInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") document.getElementById("btn-guess").click();
+  });
 }
 
-// ════════════════════════════════
-// SECTION 2: Gender Earnings
-// ════════════════════════════════
+// ── Chart ──
+
 function drawS2(data) {
   if (!data.length) return;
+
   const W = 600,
-    H = 360,
-    M = { t: 24, r: 50, b: 44, l: 58 },
-    w = W - M.l - M.r,
-    h = H - M.t - M.b;
+    H = 360;
+  const M = { t: 24, r: 50, b: 44, l: 58 };
+  const w = W - M.l - M.r;
+  const h = H - M.t - M.b;
+
   const svg = d3
     .select("#vis-gender")
     .append("svg")
     .attr("viewBox", `0 0 ${W} ${H}`)
     .attr("width", "100%")
     .style("overflow", "visible");
+
   const g = svg.append("g").attr("transform", `translate(${M.l},${M.t})`);
+
   const x = d3
     .scaleLinear()
     .domain(d3.extent(data, (d) => d.yr))
     .range([0, w]);
+
   const yA = d3
     .scaleLinear()
     .domain([0, d3.max(data, (d) => d.male) * 1.15])
     .range([h, 0]);
+
   const ratioData = data.map((d) => ({ yr: d.yr, ratio: d.female / d.male }));
+
   const yR = d3.scaleLinear().domain([0, 1.1]).range([h, 0]);
+
   const xG = g.append("g").attr("transform", `translate(0,${h})`);
   const yG = g.append("g");
   const lG = g.append("g");
+
+  function styleAxes(...axes) {
+    axes.forEach((a) => {
+      a.selectAll("text").attr("fill", "#666");
+      a.select(".domain").attr("stroke", C.axis);
+    });
+  }
 
   function absolute() {
     xG.transition()
@@ -179,72 +166,65 @@ function drawS2(data) {
           .ticks(5)
           .tickFormat((d) => `$${d / 1000}K`),
       );
-    [xG, yG].forEach((a) => {
-      a.selectAll("text").attr("fill", "#666");
-      a.select(".domain").attr("stroke", C.axis);
-    });
+    styleAxes(xG, yG);
+
     lG.selectAll("*").remove();
-    const area = d3
-      .area()
-      .x((d) => x(d.yr))
-      .y0((d) => yA(d.female))
-      .y1((d) => yA(d.male))
-      .curve(d3.curveMonotoneX);
+
+    // Gap fill
     lG.append("path")
       .datum(data)
-      .attr("d", area)
+      .attr(
+        "d",
+        d3
+          .area()
+          .x((d) => x(d.yr))
+          .y0((d) => yA(d.female))
+          .y1((d) => yA(d.male))
+          .curve(d3.curveMonotoneX),
+      )
       .attr("fill", "rgba(179,51,51,.08)");
-    lG.append("path")
-      .datum(data)
-      .attr(
-        "d",
-        d3
-          .line()
-          .x((d) => x(d.yr))
-          .y((d) => yA(d.male))
-          .curve(d3.curveMonotoneX),
-      )
-      .attr("fill", "none")
-      .attr("stroke", C.blue)
-      .attr("stroke-width", 2.5);
-    lG.append("path")
-      .datum(data)
-      .attr(
-        "d",
-        d3
-          .line()
-          .x((d) => x(d.yr))
-          .y((d) => yA(d.female))
-          .curve(d3.curveMonotoneX),
-      )
-      .attr("fill", "none")
-      .attr("stroke", C.red)
-      .attr("stroke-width", 2.5);
-    data.forEach((d) => {
-      const tt = (e) =>
-        showTip(
-          e,
-          `<b>${d.yr} Years Post-Entry</b><br>Men: ${fmt$(d.male)}<br>Women: ${fmt$(d.female)}<br>Gap: ${fmt$(d.male - d.female)}`,
-        );
-      lG.append("circle")
-        .attr("cx", x(d.yr))
-        .attr("cy", yA(d.male))
-        .attr("r", 4)
-        .attr("fill", C.blue)
-        .attr("stroke", C.bg)
-        .attr("stroke-width", 2)
-        .on("mouseover", tt)
-        .on("mouseout", hideTip);
-      lG.append("circle")
-        .attr("cx", x(d.yr))
-        .attr("cy", yA(d.female))
-        .attr("r", 4)
-        .attr("fill", C.red)
-        .attr("stroke", C.bg)
-        .attr("stroke-width", 2)
-        .on("mouseover", tt)
-        .on("mouseout", hideTip);
+
+    // Lines
+    [
+      { key: "male", color: C.blue },
+      { key: "female", color: C.red },
+    ].forEach(({ key, color }) => {
+      lG.append("path")
+        .datum(data)
+        .attr(
+          "d",
+          d3
+            .line()
+            .x((d) => x(d.yr))
+            .y((d) => yA(d[key]))
+            .curve(d3.curveMonotoneX),
+        )
+        .attr("fill", "none")
+        .attr("stroke", color)
+        .attr("stroke-width", 2.5);
     });
+
+    // Dots
+    data.forEach((d) => {
+      const tipHtml = `<b>${d.yr} Years Post-Entry</b><br>Men: ${fmt$(d.male)}<br>Women: ${fmt$(d.female)}<br>Gap: ${fmt$(d.male - d.female)}`;
+
+      [
+        { key: "male", color: C.blue },
+        { key: "female", color: C.red },
+      ].forEach(({ key, color }) => {
+        lG.append("circle")
+          .attr("cx", x(d.yr))
+          .attr("cy", yA(d[key]))
+          .attr("r", 4)
+          .attr("fill", color)
+          .attr("stroke", C.bg)
+          .attr("stroke-width", 2)
+          .on("mouseover", (e) => showTip(e, tipHtml))
+          .on("mouseout", hideTip);
+      });
+    });
+
+    // Gap annotation
     const l = data[data.length - 1];
     lG.append("line")
       .attr("x1", x(l.yr) + 10)
@@ -254,6 +234,7 @@ function drawS2(data) {
       .attr("stroke", C.red)
       .attr("stroke-width", 1)
       .attr("stroke-dasharray", "3,3");
+
     lG.append("text")
       .attr("x", x(l.yr) + 16)
       .attr("y", (yA(l.male) + yA(l.female)) / 2 + 4)
@@ -261,18 +242,19 @@ function drawS2(data) {
       .attr("font-size", "11px")
       .attr("font-weight", "600")
       .text(`${fmt$(l.male - l.female)} gap`);
-    lG.append("text")
-      .attr("x", w + 6)
-      .attr("y", yA(l.male) + 4)
-      .attr("fill", C.blue)
-      .attr("font-size", "11px")
-      .text("Men");
-    lG.append("text")
-      .attr("x", w + 6)
-      .attr("y", yA(l.female) + 4)
-      .attr("fill", C.red)
-      .attr("font-size", "11px")
-      .text("Women");
+
+    // End labels
+    [
+      { key: "male", color: C.blue, label: "Men" },
+      { key: "female", color: C.red, label: "Women" },
+    ].forEach(({ key, color, label }) => {
+      lG.append("text")
+        .attr("x", w + 6)
+        .attr("y", yA(l[key]) + 4)
+        .attr("fill", color)
+        .attr("font-size", "11px")
+        .text(label);
+    });
   }
 
   function ratioView() {
@@ -292,11 +274,11 @@ function drawS2(data) {
           .ticks(5)
           .tickFormat((d) => `$${d.toFixed(2)}`),
       );
-    [xG, yG].forEach((a) => {
-      a.selectAll("text").attr("fill", "#666");
-      a.select(".domain").attr("stroke", C.axis);
-    });
+    styleAxes(xG, yG);
+
     lG.selectAll("*").remove();
+
+    // Parity line
     lG.append("line")
       .attr("x1", 0)
       .attr("x2", w)
@@ -304,6 +286,7 @@ function drawS2(data) {
       .attr("y2", yR(1))
       .attr("stroke", "#ccc")
       .attr("stroke-dasharray", "5,4");
+
     lG.append("text")
       .attr("x", w - 4)
       .attr("y", yR(1) - 7)
@@ -311,6 +294,7 @@ function drawS2(data) {
       .attr("fill", "#999")
       .attr("font-size", "10px")
       .text("$1.00 = parity");
+
     lG.append("path")
       .datum(ratioData)
       .attr(
@@ -324,6 +308,7 @@ function drawS2(data) {
       .attr("fill", "none")
       .attr("stroke", C.gold)
       .attr("stroke-width", 2.5);
+
     ratioData.forEach((d) => {
       lG.append("circle")
         .attr("cx", x(d.yr))
@@ -343,6 +328,7 @@ function drawS2(data) {
   }
 
   absolute();
+
   d3.select("#gender-controls")
     .selectAll("button")
     .on("click", function () {

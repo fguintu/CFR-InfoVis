@@ -9,10 +9,13 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <!-- Loading Screen -->
     <div id="loading">
       <div class="bar"><div class="bar-fill"></div></div>
       <p>Loading data</p>
     </div>
+
+    <!-- Tooltip -->
     <div class="tip" id="tooltip"></div>
 
     <!-- ═══ HERO ═══ -->
@@ -54,11 +57,15 @@
         </div>
         <div class="vis-col reveal">
           <div class="controls" id="inst-controls">
-            <button id="btn-debt" class="active" data-view="grouped">Debt vs Earnings</button>
-            <button id="btn-ratio" data-view="ratio">Debt-to-Earnings Ratio</button>
+            <button id="btn-debt" class="active" data-view="grouped">
+              Debt vs Earnings
+            </button>
+            <button id="btn-ratio" data-view="ratio">
+              Debt-to-Earnings Ratio
+            </button>
           </div>
           <div id="vis-institution"></div>
-          <div id="part1-legend" style="margin-bottom: 30px" class="legend">
+          <div id="part1-legend" class="legend" style="margin-bottom: 30px">
             <div class="legend-item">
               <div class="legend-sw" style="background: #b33"></div>
               Median Grad Debt
@@ -100,7 +107,7 @@
           </div>
           <div class="microcopy" id="s1-hint">
             Tip: hover for details, click a bar group to pin it, and scrub
-            earnings year to see how “returns” shift over time.
+            earnings year to see how "returns" shift over time.
           </div>
         </div>
       </div>
@@ -129,18 +136,16 @@
           </p>
         </div>
         <div class="vis-col reveal">
-          <!-- Game Interface (shown initially) -->
+          <!-- Game Interface -->
           <div id="gender-game-overlay" style="display: none">
             <div class="vis-col">
               <h2 style="font-size: 1.5rem; margin-bottom: 12px">
                 Guess the gap
               </h2>
-
               <p style="margin-bottom: 20px">
                 Estimate the earnings gap between men and women 10 years after
                 graduation.
               </p>
-
               <div class="subcontrols" style="margin-bottom: 20px">
                 <label
                   class="ctl input-with-symbol"
@@ -155,7 +160,7 @@
                       background: transparent;
                       border: 1px solid #c5bfb3;
                       color: #1a1a1a;
-                      padding: 8px 10px 8px 25px; /* Added 25px left padding for the $ */
+                      padding: 8px 10px 8px 25px;
                       border-radius: 2px;
                       font-size: 0.85rem;
                       width: 100%;
@@ -164,12 +169,10 @@
                   />
                 </label>
               </div>
-
               <div class="controls">
                 <button id="btn-guess">Submit Guess</button>
                 <button id="btn-reveal">Reveal Answer</button>
               </div>
-
               <div
                 id="game-feedback"
                 class="microcopy"
@@ -183,7 +186,7 @@
             </div>
           </div>
 
-          <!-- Chart Interface (hidden initially) -->
+          <!-- Chart Interface -->
           <div id="gender-vis-wrapper" style="display: none">
             <div class="controls" id="gender-controls">
               <button class="active" data-view="absolute">
@@ -226,7 +229,7 @@
       </div>
     </section>
 
-    <!-- ═══ SECTION 4: Hurdle Race (WIP) ═══ -->
+    <!-- ═══ SECTION 4: Hurdle Race ═══ -->
     <section class="snap content-section" id="sec4">
       <div class="section-inner">
         <div class="text-col reveal">

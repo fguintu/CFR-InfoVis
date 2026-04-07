@@ -1,12 +1,17 @@
+/* ═══════════════════════════════════════════
+   RESET & BASE
+═══════════════════════════════════════════ */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
+
 html {
   scroll-snap-type: y mandatory;
   scroll-behavior: smooth;
 }
+
 body {
   font-family: Georgia, "Times New Roman", serif;
   background: #faf8f4;
@@ -14,7 +19,13 @@ body {
   overflow-x: hidden;
 }
 
-/* Loading */
+svg text {
+  font-family: Helvetica, Arial, sans-serif;
+}
+
+/* ═══════════════════════════════════════════
+   LOADING SCREEN
+═══════════════════════════════════════════ */
 #loading {
   position: fixed;
   inset: 0;
@@ -26,32 +37,25 @@ body {
   z-index: 9999;
   transition: opacity 0.6s;
 }
+
 #loading.done {
   opacity: 0;
   pointer-events: none;
 }
+
 #loading .bar {
   width: 180px;
   height: 2px;
   background: #ddd;
   overflow: hidden;
 }
+
 #loading .bar-fill {
   height: 100%;
   background: #8b2500;
   animation: loadbar 1.8s ease-in-out infinite;
 }
-@keyframes loadbar {
-  0% {
-    width: 0;
-  }
-  50% {
-    width: 75%;
-  }
-  100% {
-    width: 100%;
-  }
-}
+
 #loading p {
   margin-top: 14px;
   color: #888;
@@ -61,6 +65,9 @@ body {
   text-transform: uppercase;
 }
 
+/* ═══════════════════════════════════════════
+   SCROLL SNAP
+═══════════════════════════════════════════ */
 .snap {
   min-height: 100vh;
   scroll-snap-align: start;
@@ -71,13 +78,16 @@ body {
   position: relative;
 }
 
-/* Hero */
+/* ═══════════════════════════════════════════
+   HERO
+═══════════════════════════════════════════ */
 .hero-bg {
   background: #1a1a1a;
   flex-direction: column;
   text-align: center;
   padding: 0 24px;
 }
+
 .hero-bg h1 {
   font-size: 3.8rem;
   font-weight: 400;
@@ -88,6 +98,7 @@ body {
   transform: translateY(30px);
   animation: fadeUp 0.8s 0.2s forwards;
 }
+
 .hero-bg .rule {
   width: 60px;
   height: 1px;
@@ -96,6 +107,7 @@ body {
   opacity: 0;
   animation: fadeIn 0.6s 0.6s forwards;
 }
+
 .hero-bg .sub {
   font-size: 1.15rem;
   color: #a0998e;
@@ -105,6 +117,7 @@ body {
   opacity: 0;
   animation: fadeUp 0.8s 0.8s forwards;
 }
+
 .hero-bg .byline {
   margin-top: 36px;
   font-size: 0.75rem;
@@ -115,6 +128,7 @@ body {
   opacity: 0;
   animation: fadeIn 0.6s 1.2s forwards;
 }
+
 .hero-bg .scroll-cue {
   position: absolute;
   bottom: 32px;
@@ -126,40 +140,25 @@ body {
   opacity: 0;
   animation: fadeIn 0.6s 1.6s forwards;
 }
+
 .hero-bg .scroll-cue span {
   display: block;
   margin-top: 6px;
   animation: nudge 2.5s infinite;
 }
-@keyframes nudge {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(6px);
-  }
-}
-@keyframes fadeUp {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-@keyframes fadeIn {
-  to {
-    opacity: 1;
-  }
-}
 
-/* Sections */
+/* ═══════════════════════════════════════════
+   CONTENT SECTIONS
+═══════════════════════════════════════════ */
 .content-section {
   padding: 60px 6%;
   background: #faf8f4;
 }
+
 .content-section:nth-child(odd) {
   background: #f4f1eb;
 }
+
 .section-inner {
   display: flex;
   gap: 48px;
@@ -168,16 +167,20 @@ body {
   width: 100%;
   align-items: center;
 }
+
 .text-col {
   flex: 1;
   max-width: 460px;
 }
+
 .vis-col {
   flex: 1.4;
   min-width: 0;
 }
 
-/* Type */
+/* ═══════════════════════════════════════════
+   TYPOGRAPHY
+═══════════════════════════════════════════ */
 .kicker {
   font-family: Helvetica, Arial, sans-serif;
   font-size: 0.65rem;
@@ -187,6 +190,7 @@ body {
   margin-bottom: 10px;
   font-weight: 700;
 }
+
 .text-col h2 {
   font-size: 2rem;
   font-weight: 400;
@@ -194,12 +198,14 @@ body {
   margin-bottom: 16px;
   letter-spacing: -0.01em;
 }
+
 .text-col p {
   font-size: 0.95rem;
   line-height: 1.8;
   color: #4a4a4a;
   margin-bottom: 12px;
 }
+
 .pull-stat {
   border-left: 2px solid #8b2500;
   padding: 12px 18px;
@@ -210,6 +216,7 @@ body {
   line-height: 1.6;
   background: rgba(139, 37, 0, 0.03);
 }
+
 .article-quote {
   font-size: 0.88rem;
   color: #6a6560;
@@ -220,7 +227,9 @@ body {
   font-style: italic;
 }
 
-/* Tooltip */
+/* ═══════════════════════════════════════════
+   TOOLTIP
+═══════════════════════════════════════════ */
 .tip {
   position: fixed;
   background: #1a1a1a;
@@ -238,17 +247,16 @@ body {
   transition: opacity 0.12s;
 }
 
-svg text {
-  font-family: Helvetica, Arial, sans-serif;
-}
-
-/* Controls */
+/* ═══════════════════════════════════════════
+   CONTROLS
+═══════════════════════════════════════════ */
 .controls {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
   margin-bottom: 14px;
 }
+
 .subcontrols {
   display: flex;
   gap: 10px;
@@ -256,6 +264,7 @@ svg text {
   align-items: end;
   margin: -6px 0 10px 0;
 }
+
 .ctl {
   display: flex;
   flex-direction: column;
@@ -266,10 +275,12 @@ svg text {
   letter-spacing: 1px;
   color: #6a6560;
 }
+
 .ctl b {
   color: #1a1a1a;
   font-weight: 700;
 }
+
 .ctl select {
   background: transparent;
   border: 1px solid #c5bfb3;
@@ -279,13 +290,41 @@ svg text {
   font-size: 0.75rem;
   font-family: Helvetica, Arial, sans-serif;
 }
+
 .ctl-wide {
   min-width: 220px;
 }
+
 .ctl input[type="range"] {
   width: 100%;
   accent-color: #8b2500;
 }
+
+.controls button {
+  background: transparent;
+  border: 1px solid #c5bfb3;
+  color: #6a6560;
+  padding: 5px 14px;
+  border-radius: 2px;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: Helvetica, Arial, sans-serif;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.controls button:hover {
+  border-color: #8b2500;
+  color: #8b2500;
+}
+
+.controls button.active {
+  border-color: #8b2500;
+  color: #8b2500;
+  background: rgba(139, 37, 0, 0.06);
+}
+
 .controls button.ghost,
 .subcontrols button.ghost {
   background: transparent;
@@ -300,12 +339,14 @@ svg text {
   letter-spacing: 0.5px;
   text-transform: uppercase;
 }
+
 .controls button.ghost:hover,
 .subcontrols button.ghost:hover {
   border-color: #8b2500;
   color: #8b2500;
   background: rgba(139, 37, 0, 0.04);
 }
+
 .microcopy {
   font-family: Helvetica, Arial, sans-serif;
   font-size: 0.72rem;
@@ -313,35 +354,17 @@ svg text {
   line-height: 1.5;
   margin: 0 0 10px 0;
 }
-.controls button {
-  background: transparent;
-  border: 1px solid #c5bfb3;
-  color: #6a6560;
-  padding: 5px 14px;
-  border-radius: 2px;
-  font-size: 0.72rem;
-  cursor: pointer;
-  transition: all 0.15s;
-  font-family: Helvetica, Arial, sans-serif;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-.controls button:hover {
-  border-color: #8b2500;
-  color: #8b2500;
-}
-.controls button.active {
-  border-color: #8b2500;
-  color: #8b2500;
-  background: rgba(139, 37, 0, 0.06);
-}
 
+/* ═══════════════════════════════════════════
+   LEGEND
+═══════════════════════════════════════════ */
 .legend {
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
   margin-top: 10px;
 }
+
 .legend-item {
   display: flex;
   align-items: center;
@@ -350,26 +373,16 @@ svg text {
   color: #6a6560;
   font-family: Helvetica, Arial, sans-serif;
 }
+
 .legend-sw {
   width: 12px;
   height: 12px;
   border-radius: 2px;
 }
 
-.wip-banner {
-  display: inline-block;
-  font-family: Helvetica, Arial, sans-serif;
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  color: #8b2500;
-  border: 1px solid #8b2500;
-  padding: 4px 10px;
-  border-radius: 2px;
-  margin-bottom: 14px;
-}
-
-/* ── Section 4: Racetrack ── */
+/* ═══════════════════════════════════════════
+   SECTION 4: RACETRACK
+═══════════════════════════════════════════ */
 .s4-controls {
   display: flex;
   gap: 10px;
@@ -377,6 +390,7 @@ svg text {
   align-items: center;
   margin-bottom: 10px;
 }
+
 .s4-controls button {
   background: transparent;
   border: 1px solid #c5bfb3;
@@ -391,34 +405,40 @@ svg text {
   text-transform: uppercase;
   min-width: 70px;
 }
+
 .s4-controls button:hover {
   border-color: #8b2500;
   color: #8b2500;
 }
+
 .s4-controls button.active {
   border-color: #8b2500;
   color: #8b2500;
   background: rgba(139, 37, 0, 0.06);
 }
+
 .s4-speed-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-family: Helvetica, Arial, sans-serif;
   font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 1px;
   color: #6a6560;
-  display: flex;
-  align-items: center;
-  gap: 6px;
 }
+
 .s4-speed-label b {
   color: #1a1a1a;
   font-weight: 700;
   min-width: 32px;
 }
+
 .s4-speed-label input[type="range"] {
   width: 100px;
   accent-color: #8b2500;
 }
+
 .s4-detail-panel {
   position: absolute;
   background: #1a1a1a;
@@ -433,6 +453,7 @@ svg text {
   pointer-events: auto;
   z-index: 10;
 }
+
 .s4-detail-panel .panel-close {
   position: absolute;
   top: 4px;
@@ -441,12 +462,15 @@ svg text {
   color: #888;
   font-size: 0.9rem;
 }
+
 .s4-detail-panel .panel-close:hover {
   color: #fff;
 }
+
 .s4-detail-panel b {
   color: #fff;
 }
+
 .s4-detail-panel .panel-sentence {
   margin-top: 6px;
   font-style: italic;
@@ -454,6 +478,9 @@ svg text {
   font-size: 0.72rem;
 }
 
+/* ═══════════════════════════════════════════
+   REVEAL ANIMATION
+═══════════════════════════════════════════ */
 .reveal {
   opacity: 0;
   transform: translateY(24px);
@@ -461,11 +488,15 @@ svg text {
     opacity 0.7s ease,
     transform 0.7s ease;
 }
+
 .reveal.visible {
   opacity: 1;
   transform: translateY(0);
 }
 
+/* ═══════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════════ */
 .footer {
   text-align: center;
   padding: 48px 20px;
@@ -477,46 +508,23 @@ svg text {
   scroll-snap-align: end;
 }
 
-@media (max-width: 900px) {
-  .section-inner {
-    flex-direction: column;
-  }
-  .hero-bg h1 {
-    font-size: 2.4rem;
-  }
-  .text-col {
-    max-width: 100%;
-  }
-}
-
-/* Permanent $ Symbol */
+/* ═══════════════════════════════════════════
+   SECTION 2: GUESS GAME
+═══════════════════════════════════════════ */
 .input-with-symbol::after {
   content: "$";
   position: absolute;
   left: 10px;
-  bottom: 9px; /* Aligns with the input text baseline */
+  bottom: 9px;
   font-family: Helvetica, Arial, sans-serif;
   font-size: 0.85rem;
   color: #1a1a1a;
-  pointer-events: none; /* Allows clicking "through" the symbol to the input */
+  pointer-events: none;
 }
 
-@keyframes highlight-fade {
-  0% {
-    background-color: rgba(139, 37, 0, 0.2);
-  } /* Faint version of your red */
-  100% {
-    background-color: transparent;
-  }
-}
-
-.new-feedback {
-  display: inline-block;
-  animation: highlight-fade 0.8s ease-out;
-  padding: 2px 5px;
-  border-radius: 2px;
-}
-
+/* ═══════════════════════════════════════════
+   BLURRED / REVEAL TEXT (SECTION 2)
+═══════════════════════════════════════════ */
 .blur-text {
   display: inline-block;
   filter: blur(6px);
@@ -529,18 +537,69 @@ svg text {
   background-size: 200% 100%;
   border-radius: 4px;
   padding: 0 6px;
-  color: transparent; /* Hides the actual text color to prevent silhouette reading */
+  color: transparent;
   transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
   user-select: none;
   cursor: help;
-
-  /* Running both the shimmer and the pulse */
   animation:
     shimmer-reveal 2.5s infinite linear,
     breathing-glow 2s infinite ease-in-out;
 }
 
-/* Moving the light sweep from left to right */
+.unblurred {
+  filter: blur(0) !important;
+  background: transparent !important;
+  color: inherit !important;
+  animation: none !important;
+  transform: scale(1) !important;
+  box-shadow: none !important;
+}
+
+.new-feedback {
+  display: inline-block;
+  animation: highlight-fade 0.8s ease-out;
+  padding: 2px 5px;
+  border-radius: 2px;
+}
+
+/* ═══════════════════════════════════════════
+   KEYFRAMES
+═══════════════════════════════════════════ */
+@keyframes loadbar {
+  0% {
+    width: 0;
+  }
+  50% {
+    width: 75%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+@keyframes fadeUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes nudge {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(6px);
+  }
+}
+
 @keyframes shimmer-reveal {
   0% {
     background-position: 200% 0;
@@ -550,7 +609,6 @@ svg text {
   }
 }
 
-/* Subtle scaling and blur variation */
 @keyframes breathing-glow {
   0%,
   100% {
@@ -565,12 +623,28 @@ svg text {
   }
 }
 
-/* The "Reveal" State */
-.unblurred {
-  filter: blur(0) !important;
-  background: transparent !important;
-  color: inherit !important; /* Bring back the text color */
-  animation: none !important;
-  transform: scale(1) !important;
-  box-shadow: none !important;
+@keyframes highlight-fade {
+  0% {
+    background-color: rgba(139, 37, 0, 0.2);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════ */
+@media (max-width: 900px) {
+  .section-inner {
+    flex-direction: column;
+  }
+
+  .hero-bg h1 {
+    font-size: 2.4rem;
+  }
+
+  .text-col {
+    max-width: 100%;
+  }
 }
