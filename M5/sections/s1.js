@@ -109,9 +109,20 @@ export function initS1(groups) {
   }
   if (clearPinEl) {
     clearPinEl.addEventListener("click", () => {
+      // 1. Reset the UI elements to default values
+      if (debtMetricEl) debtMetricEl.value = "grad";
+      if (earnYearEl) earnYearEl.value = 6;
+      if (yearLabelEl) yearLabelEl.textContent = "6";
+
+      // 2. Reset the internal state object
       state.pinned = null;
-      api.updatePin(null);
-      updateCallout(computeData());
+      state.debtMetric = "grad";
+      state.earnYear = 6;
+
+      // 3. Trigger the visual updates
+      api.updatePin(null); // Clears the highlighting in the D3 chart
+      api.update(); // Re-renders bars based on the reset debtMetric/year
+      updateCallout(computeData()); // Updates the text description
     });
   }
 
