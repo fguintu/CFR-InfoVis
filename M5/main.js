@@ -15,7 +15,7 @@ import { initS5 } from "./sections/s5.js";
 // ════════════════════════════════
 // Load CSV & Initialize
 // ════════════════════════════════
-Papa.parse("data/filtered_data.csv", {
+Papa.parse("../data/filtered_data.csv", {
   download: true,
   header: true,
   skipEmptyLines: true,

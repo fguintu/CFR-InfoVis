@@ -57,6 +57,35 @@
             <button class="active" data-view="grouped">Debt vs Earnings</button>
             <button data-view="ratio">Debt-to-Earnings Ratio</button>
           </div>
+          <div class="subcontrols" id="inst-subcontrols">
+            <label class="ctl">
+              <span>Debt metric</span>
+              <select id="s1-debtMetric">
+                <option value="grad" selected>Median grad debt (all)</option>
+                <option value="lo">Low-income debt</option>
+                <option value="md">Middle-income debt</option>
+                <option value="hi">High-income debt</option>
+                <option value="firstgen">First-gen debt</option>
+              </select>
+            </label>
+            <label class="ctl ctl-wide">
+              <span>Earnings year: <b id="s1-yearLabel">6</b></span>
+              <input
+                id="s1-earnYear"
+                type="range"
+                min="6"
+                max="10"
+                step="1"
+                value="6"
+              />
+            </label>
+            <button class="ghost" id="s1-clearPin" title="Clear pinned selection">
+              Clear selection
+            </button>
+          </div>
+          <div class="microcopy" id="s1-hint">
+            Tip: hover for details, click a bar group to pin it, and scrub earnings year to see how “returns” shift over time.
+          </div>
           <div id="vis-institution"></div>
           <div class="legend">
             <div class="legend-item">

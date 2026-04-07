@@ -249,6 +249,70 @@ svg text {
   flex-wrap: wrap;
   margin-bottom: 14px;
 }
+.subcontrols {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: end;
+  margin: -6px 0 10px 0;
+}
+.ctl {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #6a6560;
+}
+.ctl b {
+  color: #1a1a1a;
+  font-weight: 700;
+}
+.ctl select {
+  background: transparent;
+  border: 1px solid #c5bfb3;
+  color: #1a1a1a;
+  padding: 6px 10px;
+  border-radius: 2px;
+  font-size: 0.75rem;
+  font-family: Helvetica, Arial, sans-serif;
+}
+.ctl-wide {
+  min-width: 220px;
+}
+.ctl input[type="range"] {
+  width: 100%;
+  accent-color: #8b2500;
+}
+.controls button.ghost,
+.subcontrols button.ghost {
+  background: transparent;
+  border: 1px dashed #c5bfb3;
+  color: #6a6560;
+  padding: 6px 12px;
+  border-radius: 2px;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: Helvetica, Arial, sans-serif;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.controls button.ghost:hover,
+.subcontrols button.ghost:hover {
+  border-color: #8b2500;
+  color: #8b2500;
+  background: rgba(139, 37, 0, 0.04);
+}
+.microcopy {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 0.72rem;
+  color: #8a847c;
+  line-height: 1.5;
+  margin: 0 0 10px 0;
+}
 .controls button {
   background: transparent;
   border: 1px solid #c5bfb3;

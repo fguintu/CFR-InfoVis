@@ -1,33 +1,133 @@
 // sections/s1.js
-import { med, fmt$, fmtPct, C, showTip, hideTip } from '../utils.js';
+import { med, fmt$, fmtPct, C, showTip, hideTip } from "../utils.js";
 
 // Called from main.js after CSV loads, receives the parsed groups
 export function initS1(groups) {
   const { cc, pub4, priv4, fp4, hbcus } = groups;
 
-  // ── Section 1 ──
-  const s1 = [
-    { label: "Community College",  debt: med(cc.map(r => r._GRAD_DEBT_MDN)),    earn: med(cc.map(r => r._EP6)) },
-    { label: "Public 4-Year",      debt: med(pub4.map(r => r._GRAD_DEBT_MDN)),  earn: med(pub4.map(r => r._EP6)) },
-    { label: "Private Nonprofit",  debt: med(priv4.map(r => r._GRAD_DEBT_MDN)), earn: med(priv4.map(r => r._EP6)) },
-    { label: "Private For-Profit", debt: med(fp4.map(r => r._GRAD_DEBT_MDN)),   earn: med(fp4.map(r => r._EP6)) },
-    { label: "HBCU",               debt: med(hbcus.map(r => r._GRAD_DEBT_MDN)), earn: med(hbcus.map(r => r._EP6)) },
-  ].filter(d => !isNaN(d.debt) && !isNaN(d.earn));
+  // ── Section 1 state ──
+  const groupMap = [
+    { id: "cc", label: "Community College", rows: cc },
+    { id: "pub4", label: "Public 4-Year", rows: pub4 },
+    { id: "priv4", label: "Private Nonprofit", rows: priv4 },
+    { id: "fp4", label: "Private For-Profit", rows: fp4 },
+    { id: "hbcu", label: "HBCU", rows: hbcus },
+  ];
 
-  const pv = s1.find(d => d.label === "Private Nonprofit"),
-        pu = s1.find(d => d.label === "Public 4-Year"),
-        hb = s1.find(d => d.label === "HBCU");
-  if (pv && pu && hb)
-    document.getElementById("callout1").textContent =
-      `Community college graduates carry the least debt, but HBCU students take on ${fmt$(hb.debt)} — comparable to private nonprofits at ${fmt$(pv.debt)} — while earning ${fmt$(hb.earn)} vs ${fmt$(pv.earn)} six years out.`;
+  const debtMetricEl = document.getElementById("s1-debtMetric");
+  const earnYearEl = document.getElementById("s1-earnYear");
+  const yearLabelEl = document.getElementById("s1-yearLabel");
+  const clearPinEl = document.getElementById("s1-clearPin");
 
-  drawS1(s1);
+  const state = {
+    view: "grouped",
+    debtMetric: debtMetricEl ? debtMetricEl.value : "grad",
+    earnYear: earnYearEl ? +earnYearEl.value : 6,
+    pinned: null, // label string
+  };
+
+  function debtAccessor(metric) {
+    if (metric === "lo") return (r) => r._LO_INC_DEBT_MDN;
+    if (metric === "md") return (r) => r._MD_INC_DEBT_MDN;
+    if (metric === "hi") return (r) => r._HI_INC_DEBT_MDN;
+    if (metric === "firstgen") return (r) => r._FIRSTGEN_DEBT_MDN;
+    return (r) => r._GRAD_DEBT_MDN;
+  }
+
+  function debtMetricLabel(metric) {
+    if (metric === "lo") return "low-income debt";
+    if (metric === "md") return "middle-income debt";
+    if (metric === "hi") return "high-income debt";
+    if (metric === "firstgen") return "first-gen debt";
+    return "median grad debt";
+  }
+
+  function computeData() {
+    const getDebt = debtAccessor(state.debtMetric);
+    const earnKey = `_EP${state.earnYear}`;
+    const out = groupMap
+      .map((g) => ({
+        id: g.id,
+        label: g.label,
+        debt: med(g.rows.map(getDebt)),
+        earn: med(g.rows.map((r) => r[earnKey])),
+      }))
+      .filter((d) => !isNaN(d.debt) && !isNaN(d.earn) && d.earn > 0 && d.debt >= 0);
+    return out;
+  }
+
+  function updateCallout(data) {
+    const chosen =
+      (state.pinned && data.find((d) => d.label === state.pinned)) || null;
+    const pv = data.find((d) => d.label === "Private Nonprofit");
+    const hb = data.find((d) => d.label === "HBCU");
+    const ccD = data.find((d) => d.label === "Community College");
+
+    const metric = debtMetricLabel(state.debtMetric);
+    const yr = state.earnYear;
+
+    const el = document.getElementById("callout1");
+    if (!el || !pv || !hb || !ccD) return;
+
+    if (chosen) {
+      const ratio = chosen.debt / chosen.earn;
+      el.textContent =
+        `${chosen.label} at year ${yr}: ${metric} is ${fmt$(chosen.debt)} and median earnings are ${fmt$(chosen.earn)}. Debt to earnings ratio is ${fmtPct(ratio)}. Selection is pinned from the chart.`;
+      return;
+    }
+
+    el.textContent =
+      `At year ${yr}, community college graduates show the lowest ${metric} at ${fmt$(ccD.debt)}. HBCU students carry ${fmt$(hb.debt)}, comparable to private nonprofits at ${fmt$(pv.debt)}, but earn ${fmt$(hb.earn)} versus ${fmt$(pv.earn)}.`;
+  }
+
+  const api = drawS1(() => state, computeData);
+  updateCallout(computeData());
+
+  // Controls wiring
+  if (earnYearEl && yearLabelEl) {
+    yearLabelEl.textContent = String(state.earnYear);
+    earnYearEl.addEventListener("input", () => {
+      state.earnYear = +earnYearEl.value;
+      yearLabelEl.textContent = String(state.earnYear);
+      api.update();
+      updateCallout(computeData());
+    });
+  }
+  if (debtMetricEl) {
+    debtMetricEl.addEventListener("change", () => {
+      state.debtMetric = debtMetricEl.value;
+      api.update();
+      updateCallout(computeData());
+    });
+  }
+  if (clearPinEl) {
+    clearPinEl.addEventListener("click", () => {
+      state.pinned = null;
+      api.updatePin(null);
+      updateCallout(computeData());
+    });
+  }
+
+  d3.select("#inst-controls")
+    .selectAll("button")
+    .on("click", function () {
+      d3.select("#inst-controls").selectAll("button").classed("active", false);
+      d3.select(this).classed("active", true);
+      state.view = d3.select(this).attr("data-view") === "grouped" ? "grouped" : "ratio";
+      api.update();
+    });
+
+  // Let chart inform pinned selection back to the callout
+  api.onPin((label) => {
+    state.pinned = label;
+    updateCallout(computeData());
+  });
 }
 
 // ════════════════════════════════
 // SECTION 1: Institution Type
 // ════════════════════════════════
-function drawS1(data) {
+function drawS1(getState, getData) {
   const W = 600,
     H = 440,
     M = { t: 24, r: 24, b: 110, l: 58 },
@@ -40,18 +140,13 @@ function drawS1(data) {
     .attr("width", "100%")
     .style("overflow", "visible");
   const g = svg.append("g").attr("transform", `translate(${M.l},${M.t})`);
-  const x0 = d3
-    .scaleBand()
-    .domain(data.map((d) => d.label))
-    .range([0, w])
-    .padding(0.3);
+  const x0 = d3.scaleBand().range([0, w]).padding(0.3);
   const x1 = d3
     .scaleBand()
     .domain(["debt", "earn"])
     .range([0, x0.bandwidth()])
     .padding(0.1);
-  const maxV = d3.max(data, (d) => Math.max(d.debt, d.earn)) * 1.15;
-  const y = d3.scaleLinear().domain([0, maxV]).range([h, 0]);
+  const y = d3.scaleLinear().range([h, 0]);
   const xAx = g.append("g").attr("transform", `translate(0,${h})`);
   const yAx = g.append("g");
 
@@ -67,7 +162,26 @@ function drawS1(data) {
       .attr("dy", "1em");
   }
 
-  function grouped() {
+  let pinned = null;
+  let pinCb = () => {};
+
+  function applyPinStyles() {
+    const all = g.selectAll(".bg");
+    all.classed("is-pinned", (d) => pinned && d.label === pinned);
+    all.classed("is-dimmed", (d) => pinned && d.label !== pinned);
+    all.selectAll("rect").attr("opacity", (d) =>
+      pinned ? (d.label === pinned ? 1 : 0.25) : 1,
+    );
+    g.selectAll(".rbar").attr("opacity", (d) =>
+      pinned ? (d.label === pinned ? 1 : 0.25) : 1,
+    );
+    g.selectAll(".rlabel").attr("opacity", (d) =>
+      pinned ? (d.label === pinned ? 1 : 0.2) : 1,
+    );
+  }
+
+  function grouped(data) {
+    const maxV = d3.max(data, (d) => Math.max(d.debt, d.earn)) * 1.15;
     y.domain([0, maxV]);
     yAx
       .transition()
@@ -87,7 +201,13 @@ function drawS1(data) {
       .enter()
       .append("g")
       .attr("class", "bg")
-      .attr("transform", (d) => `translate(${x0(d.label)},0)`);
+      .attr("transform", (d) => `translate(${x0(d.label)},0)`)
+      .style("cursor", "pointer")
+      .on("click", (_, d) => {
+        pinned = pinned === d.label ? null : d.label;
+        applyPinStyles();
+        pinCb(pinned);
+      });
     en.append("rect")
       .attr("class", "bd")
       .attr("x", x1("debt"))
@@ -97,7 +217,10 @@ function drawS1(data) {
       .attr("y", h)
       .attr("height", 0)
       .on("mouseover", (e, d) =>
-        showTip(e, `<b>${d.label}</b><br>Median Grad Debt: ${fmt$(d.debt)}`),
+        showTip(
+          e,
+          `<b>${d.label}</b><br>Debt: ${fmt$(d.debt)}<br>Earnings: ${fmt$(d.earn)}<br>Debt/Earnings: ${fmtPct(d.debt / d.earn)}`,
+        ),
       )
       .on("mouseout", hideTip);
     en.append("rect")
@@ -111,11 +234,12 @@ function drawS1(data) {
       .on("mouseover", (e, d) =>
         showTip(
           e,
-          `<b>${d.label}</b><br>Median Earnings (6yr): ${fmt$(d.earn)}`,
+          `<b>${d.label}</b><br>Debt: ${fmt$(d.debt)}<br>Earnings: ${fmt$(d.earn)}<br>Debt/Earnings: ${fmtPct(d.debt / d.earn)}`,
         ),
       )
       .on("mouseout", hideTip);
     const mg = en.merge(grp);
+    mg.transition().duration(350).attr("transform", (d) => `translate(${x0(d.label)},0)`);
     mg.select(".bd")
       .transition()
       .duration(600)
@@ -126,9 +250,11 @@ function drawS1(data) {
       .duration(600)
       .attr("y", (d) => y(d.earn))
       .attr("height", (d) => h - y(d.earn));
+    grp.exit().remove();
+    applyPinStyles();
   }
 
-  function ratio() {
+  function ratio(data) {
     const rd = data.map((d) => ({ ...d, ratio: d.debt / d.earn }));
     const mx = d3.max(rd, (d) => d.ratio) * 1.2;
     y.domain([0, mx]);
@@ -153,16 +279,26 @@ function drawS1(data) {
       .attr("rx", 2)
       .attr("y", h)
       .attr("height", 0)
+      .style("cursor", "pointer")
       .on("mouseover", (e, d) =>
-        showTip(e, `<b>${d.label}</b><br>Debt/Earnings: ${fmtPct(d.ratio)}`),
+        showTip(
+          e,
+          `<b>${d.label}</b><br>Debt/Earnings: ${fmtPct(d.ratio)}<br>Debt: ${fmt$(d.debt)}<br>Earnings: ${fmt$(d.earn)}`,
+        ),
       )
       .on("mouseout", hideTip)
+      .on("click", (_, d) => {
+        pinned = pinned === d.label ? null : d.label;
+        applyPinStyles();
+        pinCb(pinned);
+      })
       .merge(bars)
       .transition()
       .duration(600)
       .attr("y", (d) => y(d.ratio))
       .attr("height", (d) => h - y(d.ratio))
       .attr("fill", (d) => color(d.ratio));
+    bars.exit().remove();
     const lbl = g.selectAll(".rlabel").data(rd, (d) => d.label);
     lbl
       .enter()
@@ -184,14 +320,28 @@ function drawS1(data) {
           d3.select(this).text(i(t).toFixed(0) + "%");
         };
       });
+    lbl.exit().remove();
+    applyPinStyles();
   }
 
-  grouped();
-  d3.select("#inst-controls")
-    .selectAll("button")
-    .on("click", function () {
-      d3.select("#inst-controls").selectAll("button").classed("active", false);
-      d3.select(this).classed("active", true);
-      d3.select(this).attr("data-view") === "grouped" ? grouped() : ratio();
-    });
+  function update() {
+    const state = getState();
+    const data = getData();
+    x0.domain(data.map((d) => d.label));
+    x1.range([0, x0.bandwidth()]);
+    renderAxis();
+    state.view === "grouped" ? grouped(data) : ratio(data);
+  }
+
+  function updatePin(label) {
+    pinned = label;
+    applyPinStyles();
+  }
+
+  function onPin(cb) {
+    pinCb = typeof cb === "function" ? cb : () => {};
+  }
+
+  update();
+  return { update, updatePin, onPin };
 }
