@@ -79,12 +79,17 @@
                 value="6"
               />
             </label>
-            <button class="ghost" id="s1-clearPin" title="Clear pinned selection">
+            <button
+              class="ghost"
+              id="s1-clearPin"
+              title="Clear pinned selection"
+            >
               Clear selection
             </button>
           </div>
           <div class="microcopy" id="s1-hint">
-            Tip: hover for details, click a bar group to pin it, and scrub earnings year to see how “returns” shift over time.
+            Tip: hover for details, click a bar group to pin it, and scrub
+            earnings year to see how “returns” shift over time.
           </div>
           <div id="vis-institution"></div>
           <div class="legend">
@@ -124,13 +129,82 @@
           </p>
         </div>
         <div class="vis-col reveal">
-          <div class="controls" id="gender-controls">
-            <button class="active" data-view="absolute">
-              Earnings Over Time
-            </button>
-            <button data-view="ratio">Cents per Dollar</button>
+          <!-- Game Interface (shown initially) -->
+          <div id="gender-game-overlay" style="display: none">
+            <h3 style="font-size: 1.3rem; margin-bottom: 16px; color: #1a1a1a">
+              Guess the wage gap
+            </h3>
+            <p style="font-size: 0.9rem; color: #666; margin-bottom: 12px">
+              What is the annual salary difference between men and women 10
+              years after graduation?
+            </p>
+            <div style="display: flex; gap: 10px; margin-bottom: 12px">
+              <input
+                type="number"
+                id="gap-guess"
+                placeholder="Enter amount ($)"
+                style="
+                  flex: 1;
+                  padding: 10px;
+                  border: 1px solid #c5bfb3;
+                  border-radius: 2px;
+                  font-size: 0.95rem;
+                "
+              />
+            </div>
+            <div style="display: flex; gap: 8px; margin-bottom: 12px">
+              <button
+                id="btn-guess"
+                style="
+                  padding: 8px 16px;
+                  background: #8b2500;
+                  color: white;
+                  border: none;
+                  border-radius: 2px;
+                  cursor: pointer;
+                  font-size: 0.9rem;
+                  font-weight: 600;
+                "
+              >
+                Guess
+              </button>
+              <button
+                id="btn-reveal"
+                style="
+                  padding: 8px 16px;
+                  background: #6a6560;
+                  color: white;
+                  border: none;
+                  border-radius: 2px;
+                  cursor: pointer;
+                  font-size: 0.9rem;
+                  font-weight: 600;
+                "
+              >
+                Reveal Answer
+              </button>
+            </div>
+            <div
+              id="game-feedback"
+              style="
+                font-size: 0.95rem;
+                color: #666;
+                min-height: 20px;
+                font-weight: 600;
+              "
+            ></div>
           </div>
-          <div id="vis-gender"></div>
+
+          <!-- Chart Interface (hidden initially) -->
+          <div id="gender-vis-wrapper" style="display: none">
+            <div class="controls" id="gender-controls">
+              <button class="active" data-view="absolute">
+                Earnings Over Time
+              </button>
+              <button data-view="ratio">Cents per Dollar</button>
+            </div>
+            <div id="vis-gender"></div>
+          </div>
         </div>
       </div>
     </section>

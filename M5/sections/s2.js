@@ -1,4 +1,3 @@
-// sections/s2.js
 import { med, fmt$, C, showTip, hideTip } from "../utils.js";
 
 export function initS2(groups) {
@@ -11,13 +10,79 @@ export function initS2(groups) {
       f = med(rows.map((r) => r[`_EF${yr}`]));
     if (!isNaN(m) && !isNaN(f)) s2.push({ yr, male: m, female: f });
   }
+
   if (s2.length) {
     const last = s2[s2.length - 1];
+    const actualGap = Math.round(last.male - last.female);
     const cents = ((last.female / last.male) * 100).toFixed(1);
-    document.getElementById("callout2").textContent =
-      `Female graduates earn approximately ${cents} cents for every dollar their male peers make. By ${last.yr} years out, women earn ${fmt$(last.female)} vs ${fmt$(last.male)} for men — a gap of ${fmt$(last.male - last.female)} annually.`;
+
+    // Show game overlay, hide chart
+    document.getElementById("gender-game-overlay").style.display = "block";
+    document.getElementById("gender-vis-wrapper").style.display = "none";
+
+    // Initialize game state
+    let lastDiff = null;
+
+    // Guess button handler
+    document.getElementById("btn-guess").addEventListener("click", () => {
+      const guess = parseInt(document.getElementById("gap-guess").value, 10);
+      const feedback = document.getElementById("game-feedback");
+
+      if (isNaN(guess) || guess < 0) {
+        feedback.textContent = "Please enter a valid number.";
+        feedback.style.color = "#b33";
+        return;
+      }
+
+      const currentDiff = Math.abs(guess - actualGap);
+
+      if (lastDiff === null) {
+        // First guess
+        if (currentDiff <= 500) {
+          feedback.textContent = "Right direction!";
+          feedback.style.color = "#2a6496";
+        } else {
+          feedback.textContent = "Way off!";
+          feedback.style.color = "#b33";
+        }
+      } else {
+        // Subsequent guesses
+        if (currentDiff < lastDiff) {
+          feedback.textContent = "🔥 Hotter!";
+          feedback.style.color = "#d9534f";
+        } else if (currentDiff > lastDiff) {
+          feedback.textContent = "❄️ Colder";
+          feedback.style.color = "#5bc0de";
+        } else {
+          feedback.textContent = "Same distance";
+          feedback.style.color = "#666";
+        }
+      }
+
+      lastDiff = currentDiff;
+    });
+
+    // Reveal button handler
+    document.getElementById("btn-reveal").addEventListener("click", () => {
+      // Hide game, show chart
+      document.getElementById("gender-game-overlay").style.display = "none";
+      document.getElementById("gender-vis-wrapper").style.display = "block";
+
+      // Update callout with full info
+      document.getElementById("callout2").textContent =
+        `Female graduates earn approximately ${cents} cents for every dollar their male peers make. By ${last.yr} years out, women earn ${fmt$(last.female)} vs ${fmt$(last.male)} for men — a gap of ${fmt$(actualGap)} annually.`;
+
+      // Draw the chart
+      drawS2(s2);
+    });
+
+    // Allow Enter key to submit guess
+    document.getElementById("gap-guess").addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        document.getElementById("btn-guess").click();
+      }
+    });
   }
-  drawS2(s2);
 }
 
 // ════════════════════════════════
