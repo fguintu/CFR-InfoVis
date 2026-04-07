@@ -2,12 +2,229 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>m5</title>
+    <title>The Diploma Divide</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <div id="loading">
+      <div class="bar"><div class="bar-fill"></div></div>
+      <p>Loading data</p>
+    </div>
+    <div class="tip" id="tooltip"></div>
+
+    <!-- ═══ HERO ═══ -->
+    <section class="snap hero-bg">
+      <h1>The Diploma Divide</h1>
+      <div class="rule"></div>
+      <p class="sub">
+        The promise of higher education has long rested on a simple equation:
+        invest in a degree, secure a better future. The data tells a different
+        story.
+      </p>
+      <p class="byline">
+        Frederic Guintu · Robert Jarman · Caleb Jennings &nbsp;—&nbsp; CS 5/441
+      </p>
+      <div class="scroll-cue">Scroll<span>↓</span></div>
+    </section>
+
+    <!-- ═══ SECTION 1: Debt/Income by Institution Type ═══ -->
+    <section class="snap content-section" id="sec1">
+      <div class="section-inner">
+        <div class="text-col reveal">
+          <div class="kicker">Part I — The Investment</div>
+          <h2>Same Credential, Different Price</h2>
+          <p>
+            At community colleges nationwide, students graduate with modest
+            debt, only to enter a labor market that undervalues their
+            credentials. Meanwhile, graduates from private institutions leave
+            campus carrying more debt but command higher salaries. The gap
+            widens further at HBCUs, where students take on obligations
+            comparable to private schools but face hiring discrimination and
+            network disadvantages.
+          </p>
+          <div class="pull-stat" id="callout1">Loading…</div>
+          <p class="article-quote">
+            The assumption that choosing a less expensive institution guarantees
+            less debt ignores the reality of living costs, family obligations,
+            and the gaps that financial aid fails to cover.
+          </p>
+        </div>
+        <div class="vis-col reveal">
+          <div class="controls" id="inst-controls">
+            <button class="active" data-view="grouped">Debt vs Earnings</button>
+            <button data-view="ratio">Debt-to-Earnings Ratio</button>
+          </div>
+          <div id="vis-institution"></div>
+          <div class="legend">
+            <div class="legend-item">
+              <div class="legend-sw" style="background: #b33"></div>
+              Median Grad Debt
+            </div>
+            <div class="legend-item">
+              <div class="legend-sw" style="background: #2a6496"></div>
+              Median Earnings (6yr)
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ SECTION 2: Gender Earnings Gap ═══ -->
+    <section class="snap content-section" id="sec2">
+      <div class="section-inner">
+        <div class="text-col reveal">
+          <div class="kicker">Part II — The Wage Gap</div>
+          <h2>Same Degree, Unequal Returns</h2>
+          <p>
+            Women borrow slightly more than men on average — a difference that
+            seems minor until paired with earnings data. The wage gap transforms
+            a modest difference in borrowing into a significant difference in
+            repayment capacity. The monthly payment represents a larger share of
+            take-home pay, leaving less room for emergencies, savings, or the
+            investments that build wealth over time.
+          </p>
+          <div class="pull-stat" id="callout2">Loading…</div>
+          <p class="article-quote">
+            A woman leaving a state university faces a fundamentally different
+            financial reality than a man with similar debt. Women across all
+            institution types earn less than men with identical degrees, turning
+            the same educational investment into unequal returns.
+          </p>
+        </div>
+        <div class="vis-col reveal">
+          <div class="controls" id="gender-controls">
+            <button class="active" data-view="absolute">
+              Earnings Over Time
+            </button>
+            <button data-view="ratio">Cents per Dollar</button>
+          </div>
+          <div id="vis-gender"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ SECTION 3: Completion Rates ═══ -->
+    <section class="snap content-section" id="sec3">
+      <div class="section-inner">
+        <div class="text-col reveal">
+          <div class="kicker">Part III — The Finish Line</div>
+          <h2>Who Gets to Graduate?</h2>
+          <p>
+            Before debt and earnings even enter the picture, completion rates
+            reveal a prior inequality. Community college graduates,
+            disproportionately students of color and first-generation students,
+            face the steepest odds. Among four-year institutions, the
+            disparities persist across racial demographics — the same access to
+            enrollment does not translate to the same access to a diploma.
+          </p>
+          <div class="pull-stat" id="callout3">Loading…</div>
+          <p class="article-quote">
+            Access to college is not the same as access to its benefits. The
+            diploma should not be a dividing line that separates those for whom
+            education delivers on its promise from those for whom it simply
+            delivers debt.
+          </p>
+        </div>
+        <div class="vis-col reveal">
+          <div id="vis-completion"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ SECTION 4: Hurdle Race (WIP) ═══ -->
+    <section class="snap content-section" id="sec4">
+      <div class="section-inner">
+        <div class="text-col reveal">
+          <div class="kicker">Part IV — The Long Road</div>
+          <h2>The Race to Debt Free</h2>
+          <span class="wip-banner"
+            >Work in Progress — Hand-drawn visuals forthcoming</span
+          >
+          <p>
+            The mathematics of debt repayment illuminates why these disparities
+            matter beyond the immediate paycheck. A graduate earning less with
+            comparable debt spends a larger portion of income on loan payments.
+            They delay homeownership, cannot contribute to retirement accounts,
+            and struggle to absorb unexpected costs. The higher earner, despite
+            similar absolute debt, achieves financial flexibility within years.
+          </p>
+          <div class="pull-stat" id="callout4">Loading…</div>
+          <p class="article-quote">
+            First-generation students and those from low-income backgrounds
+            borrow at higher rates regardless of where they enroll, because
+            grants and family contributions cannot bridge the full cost of
+            attendance.
+          </p>
+        </div>
+        <div class="vis-col reveal">
+          <div id="vis-racetrack"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ SECTION 5: Beeswarm ═══ -->
+    <section class="snap content-section" id="sec5">
+      <div class="section-inner">
+        <div class="text-col reveal">
+          <div class="kicker">Part V — The Full Picture</div>
+          <h2>Every Institution Tells a Story</h2>
+          <p>
+            When debt and earnings combine across institution types, the
+            resulting patterns expose systematic inequity. HBCU graduates carry
+            the cultural and social capital of their institutions but cluster at
+            higher debt-to-earnings ratios. For-profit schools show the widest
+            spread. These disparities do not reflect individual merit or effort
+            — they reflect structures that assign different values to the same
+            achievement.
+          </p>
+          <div class="pull-stat" id="callout5">Loading…</div>
+          <p class="article-quote">
+            Students making rational choices about affordability and
+            accessibility find themselves penalized in a labor market that
+            rewards institutional prestige and demographic privilege.
+          </p>
+        </div>
+        <div class="vis-col reveal">
+          <div class="controls" id="bee-controls">
+            <button class="active" data-filter="all">All</button>
+            <button data-filter="1">Public</button>
+            <button data-filter="2">Private Nonprofit</button>
+            <button data-filter="3">For-Profit</button>
+            <button data-filter="hbcu">HBCU</button>
+          </div>
+          <div id="vis-beeswarm"></div>
+          <div class="legend">
+            <div class="legend-item">
+              <div class="legend-sw" style="background: #2a6496"></div>
+              Public
+            </div>
+            <div class="legend-item">
+              <div class="legend-sw" style="background: #b8860b"></div>
+              Private Nonprofit
+            </div>
+            <div class="legend-item">
+              <div class="legend-sw" style="background: #b33"></div>
+              For-Profit
+            </div>
+            <div class="legend-item">
+              <div class="legend-sw" style="background: #6a3d9a"></div>
+              HBCU
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      Data: U.S. Department of Education College Scorecard (Most Recent
+      Cohorts)<br />
+      Built with D3.js &nbsp;·&nbsp; CS 5/441 &nbsp;·&nbsp; Frederic Guintu,
+      Robert Jarman, Caleb Jennings
+    </footer>
+
+    <script type="module" src="main.js"></script>
   </body>
 </html>
