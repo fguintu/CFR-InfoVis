@@ -53,21 +53,22 @@ function drawS5(data) {
   const w = W - M.l - M.r;
   const h = H - M.t - M.b;
 
+  const visContainer = document.getElementById("vis-beeswarm");
+  visContainer.innerHTML = ""; // Clear previous
+
+  // ── Scale state ──
+  let maxScale = 2;
+
   const svg = d3
-    .select("#vis-beeswarm")
+    .select(visContainer)
     .append("svg")
     .attr("viewBox", `0 0 ${W} ${H}`)
     .attr("width", "100%");
 
   const g = svg.append("g").attr("transform", `translate(${M.l},${M.t})`);
 
-  const xMax =
-    d3.quantile(
-      data.map((d) => d.ratio).sort((a, b) => a - b),
-      0.95,
-    ) || 1.5;
-
-  const x = d3.scaleLinear().domain([0, xMax]).range([0, w]);
+  // ── Init scales ──
+  const x = d3.scaleLinear().domain([0, maxScale]).range([0, w]);
 
   const r = d3
     .scaleSqrt()
@@ -91,21 +92,22 @@ function drawS5(data) {
     return d.hbcu === 1 ? "HBCU" : TYPE_LABEL[d.control] || "Unknown";
   }
 
-  // ── Axis ──
-  g.append("g")
-    .attr("transform", `translate(0,${h})`)
-    .call(d3.axisBottom(x).ticks(6).tickFormat(d3.format(".0%")))
-    .selectAll("text")
-    .attr("fill", "#666");
+  // ── Axis groups ──
+  const xAxisG = g
+    .append("g")
+    .attr("transform", `translate(0,${h})`);
 
-  g.select(".domain").attr("stroke", C.axis);
+  g.append("g").select(".domain").attr("stroke", C.axis);
 
   // ── Scatter positions ──
-  data.forEach((d) => {
-    d.px = x(Math.min(d.ratio, xMax));
-    d.py = h / 2 + (Math.random() - 0.5) * h * 0.78;
-    d.pr = r(d.ug);
-  });
+  function positionData() {
+    data.forEach((d) => {
+      d.px = x(d.ratio);
+      d.py = h / 2 + (Math.random() - 0.5) * h * 0.78;
+      d.pr = r(d.ug);
+    });
+  }
+  positionData();
 
   // ── Circles ──
   const circles = g
@@ -134,6 +136,30 @@ function drawS5(data) {
       d3.select(this).attr("opacity", 0.55).attr("stroke", "none");
       hideTip();
     });
+
+  // ── Update axis ──
+  function updateAxis() {
+    xAxisG
+      .transition()
+      .duration(400)
+      .call(d3.axisBottom(x).ticks(6).tickFormat(d3.format(".1f")))
+      .selectAll("text")
+      .attr("fill", "#666")
+      .style("font-size", "11px");
+
+    xAxisG.select(".domain").attr("stroke", C.axis);
+  }
+
+  updateAxis();
+
+  // ── Update circles on scale change ──
+  function updateVisualization() {
+    positionData();
+    circles
+      .transition()
+      .duration(350)
+      .attr("cx", (d) => d.px);
+  }
 
   // ── Animate on scroll into view ──
   let animated = false;
@@ -175,5 +201,31 @@ function drawS5(data) {
           isActive(d) ? (f === "all" ? 0.55 : 0.7) : 0.04,
         )
         .attr("r", (d) => (isActive(d) ? d.pr : d.pr * 0.3));
+    });
+
+    // ── Scale adjustment controls ──
+  const visParent = visContainer.parentElement;
+  const scaleCtrlDiv = d3
+    .select(visParent)
+    .append("label")
+    .attr("class", "s4-speed-label")
+    .style("margin-top", "12px");
+
+  scaleCtrlDiv.append("span").text("Scale:");
+  const scaleLabel = scaleCtrlDiv.append("b").text("2x");
+
+  scaleCtrlDiv
+    .append("input")
+    .attr("type", "range")
+    .attr("min", 0.5)
+    .attr("max", 2)
+    .attr("step", 0.25)
+    .attr("value", 2)
+    .on("input", function () {
+      maxScale = +this.value;
+      x.domain([0, maxScale]);
+      updateAxis();
+      updateVisualization();
+      scaleLabel.text(maxScale.toFixed(2) + "x");
     });
 }
