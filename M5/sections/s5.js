@@ -57,7 +57,7 @@ function drawS5(data) {
   visContainer.innerHTML = ""; // Clear previous
 
   // ── Scale state ──
-  let maxScale = 2;
+  let maxScale = 1;
 
   const svg = d3
     .select(visContainer)
@@ -212,7 +212,7 @@ function drawS5(data) {
     .style("margin-top", "12px");
 
   scaleCtrlDiv.append("span").text("Scale:");
-  const scaleLabel = scaleCtrlDiv.append("b").text("2x");
+  const scaleLabel = scaleCtrlDiv.append("b").text("1x");
 
   scaleCtrlDiv
     .append("input")
@@ -220,7 +220,7 @@ function drawS5(data) {
     .attr("min", 0.5)
     .attr("max", 2)
     .attr("step", 0.25)
-    .attr("value", 2)
+    .attr("value", 1)
     .on("input", function () {
       maxScale = +this.value;
       x.domain([0, maxScale]);
