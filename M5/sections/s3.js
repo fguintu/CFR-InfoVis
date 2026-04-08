@@ -10,8 +10,8 @@ const RACE_SPEC = [
   { r: "Black", k: "_C150_BLACK", c: C.red },
   { r: "Hispanic", k: "_C150_HISP", c: C.gold },
   { r: "Asian", k: "_C150_ASIAN", c: C.green },
-  { r: "AIAN", k: "_C150_AIAN", c: C.orange },
-  { r: "NHPI", k: "_C150_NHPI", c: C.teal },
+  { r: "American Ind.", k: "_C150_AIAN", c: C.orange },
+  { r: "Pacific Isln.", k: "_C150_NHPI", c: C.teal },
   { r: "Two+", k: "_C150_2MOR", c: C.purple },
 ];
 
@@ -157,7 +157,7 @@ function drawS3(data) {
         .attr("cursor", "pointer")
         .on("mouseover", function (e, d) {
           d3.select(this).attr("opacity", 1);
-          showTip(e, `<b>${d.race}</b><br>150% Completion: ${fmtPct(d.rate)}`);
+          showTip(e, `<b>${d.race}</b><br>Completion Within 6 Years: ${fmtPct(d.rate)}`);
         })
         .on("mouseout", function (e, d) {
           if (!selectedBars.includes(d)) d3.select(this).attr("opacity", 0.82);
