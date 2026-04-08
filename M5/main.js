@@ -16,7 +16,7 @@ import { initS5 } from "./sections/s5.js";
 // CSV Load & Bootstrap
 // ════════════════════════════════════════════
 
-Papa.parse("../M4/data/filtered_data.csv", {
+Papa.parse("/CFR-InfoVis/M5/data/filtered_data.csv", {
   download: true,
   header: true,
   skipEmptyLines: true,
