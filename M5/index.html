@@ -72,7 +72,7 @@
             </div>
             <div class="legend-item">
               <div class="legend-sw" style="background: #2a6496"></div>
-              Median Earnings (6yr)
+              Median Earnings
             </div>
           </div>
           <div class="subcontrols" id="inst-subcontrols">
@@ -97,17 +97,10 @@
                 value="6"
               />
             </label>
-            <button
-              class="ghost"
-              id="s1-clearPin"
-              title="Clear pinned selection"
-            >
-              Clear selection
-            </button>
           </div>
           <div class="microcopy" id="s1-hint">
-            Tip: hover for details, click a bar group to pin it, and scrub
-            earnings year to see how "returns" shift over time.
+            Hover for details, click a bar group to pin it, and scrub earnings
+            year to see how "returns" shift over time.
           </div>
         </div>
       </div>
@@ -155,7 +148,7 @@
                   <input
                     type="text"
                     id="gap-guess"
-                    placeholder="15,000"
+                    placeholder="e.g. 5,000"
                     style="
                       background: transparent;
                       border: 1px solid #c5bfb3;
@@ -224,7 +217,9 @@
         </div>
         <div class="vis-col reveal">
           <div id="vis-completion"></div>
-          <div id="compare-rates"></div>
+          <div style="margin-left: 34px;" class="microcopy" id="s3-hint">
+          Click the bars of two racial groups to compare completion rates between them.
+        </div>
         </div>
       </div>
     </section>

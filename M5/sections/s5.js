@@ -100,14 +100,6 @@ function drawS5(data) {
 
   g.select(".domain").attr("stroke", C.axis);
 
-  g.append("text")
-    .attr("x", w / 2)
-    .attr("y", h + 36)
-    .attr("text-anchor", "middle")
-    .attr("fill", "#999")
-    .attr("font-size", "10px")
-    .text("Debt-to-Earnings Ratio");
-
   // ── Scatter positions ──
   data.forEach((d) => {
     d.px = x(Math.min(d.ratio, xMax));

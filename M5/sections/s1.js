@@ -19,7 +19,6 @@ export function initS1(groups) {
   const debtMetricEl = document.getElementById("s1-debtMetric");
   const earnYearEl = document.getElementById("s1-earnYear");
   const yearLabelEl = document.getElementById("s1-yearLabel");
-  const clearPinEl = document.getElementById("s1-clearPin");
 
   const state = {
     view: "grouped",
@@ -126,22 +125,6 @@ export function initS1(groups) {
     });
   }
 
-  if (clearPinEl) {
-    clearPinEl.addEventListener("click", () => {
-      if (debtMetricEl) debtMetricEl.value = "grad";
-      if (earnYearEl) earnYearEl.value = 6;
-      if (yearLabelEl) yearLabelEl.textContent = "6";
-
-      state.pinned = null;
-      state.debtMetric = "grad";
-      state.earnYear = 6;
-
-      api.updatePin(null);
-      api.update();
-      updateCallout(computeData());
-    });
-  }
-
   d3.select("#inst-controls")
     .selectAll("button")
     .on("click", function () {
@@ -187,6 +170,27 @@ function drawS1(getState, getData) {
 
   let pinned = null;
   let pinCb = () => {};
+
+   // ── Subtle gridlines ──
+  y.ticks(5).forEach((t) => {
+    g.append("line")
+      .attr("x1", 0)
+      .attr("x2", w)
+      .attr("y1", y(t))
+      .attr("y2", y(t))
+      .attr("stroke", "#e0dcd5")
+      .attr("stroke-dasharray", "1,2")
+      .attr("opacity", 0.6);
+  });
+
+  // ── Zero-line emphasis ──
+  g.append("line")
+    .attr("x1", 0)
+    .attr("x2", w)
+    .attr("y1", y(0))
+    .attr("y2", y(0))
+    .attr("stroke", "#c5bfb3")
+    .attr("stroke-width", 1);
 
   function renderAxis() {
     xAx

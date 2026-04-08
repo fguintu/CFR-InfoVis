@@ -28,12 +28,11 @@ export function initS3(groups) {
     const best = s3.reduce((a, b) => (a.rate > b.rate ? a : b));
     const worst = s3.reduce((a, b) => (a.rate < b.rate ? a : b));
 
-    document.getElementById("callout3").textContent =
+    const callout = document.getElementById("callout3");
+    callout.style.height = "72.64px";
+    callout.textContent =
       `${best.race} students complete at ${fmtPct(best.rate)}, ` +
       `while ${worst.race} students complete at ${fmtPct(worst.rate)}.`;
-
-    document.getElementById("compare-rates").textContent =
-      "Click two bars to compare ratios";
   }
 
   drawS3(s3);
@@ -66,35 +65,50 @@ function drawS3(data) {
 
   const y = d3.scaleLinear().domain([0, 1]).range([h, 0]);
 
-  // ── Axes ──
-  g.append("g")
-    .attr("transform", `translate(0,${h})`)
-    .call(d3.axisBottom(x).tickSize(0))
-    .selectAll("text")
-    .attr("fill", "#666")
-    .style("font-size", "11px");
-
-  g.append("g")
-    .call(d3.axisLeft(y).ticks(5).tickFormat(d3.format(".0%")))
-    .selectAll("text")
-    .attr("fill", "#666");
-
-  // ── Gridlines ──
+  // ── Subtle gridlines ──
   y.ticks(5).forEach((t) => {
     g.append("line")
       .attr("x1", 0)
       .attr("x2", w)
       .attr("y1", y(t))
       .attr("y2", y(t))
-      .attr("stroke", C.grid)
-      .attr("stroke-dasharray", "2,3");
+      .attr("stroke", "#e0dcd5")
+      .attr("stroke-dasharray", "1,2")
+      .attr("opacity", 0.6);
   });
+
+  // ── Zero-line emphasis ──
+  g.append("line")
+    .attr("x1", 0)
+    .attr("x2", w)
+    .attr("y1", y(0))
+    .attr("y2", y(0))
+    .attr("stroke", "#c5bfb3")
+    .attr("stroke-width", 1);
+
+  // ── Axes ──
+  g.append("g")
+    .attr("transform", `translate(0,${h})`)
+    .call(d3.axisBottom(x).tickSize(0))
+    .selectAll("text")
+    .attr("fill", "#666")
+    .style("font-size", "11px")
+    .style("font-family", "Helvetica, Arial, sans-serif");
+
+  const yAxis = g
+    .append("g")
+    .call(d3.axisLeft(y).ticks(5).tickFormat(d3.format(".0%")))
+    .selectAll("text")
+    .attr("fill", "#666")
+    .style("font-size", "11px");
+
+  g.selectAll(".domain").attr("stroke", C.axis);
 
   // ── Bar selection state ──
   let selectedBars = [];
 
   function handleSelection(d, element) {
-    const compare = document.getElementById("compare-rates");
+    const callout = document.getElementById("callout3");
 
     // Reset if already have 2 or re-clicking same bar
     if (selectedBars.length >= 2 || selectedBars.includes(d)) {
@@ -111,11 +125,11 @@ function drawS3(data) {
     if (selectedBars.length === 2) {
       const [first, second] = selectedBars;
       const ratio = (first.rate / second.rate).toFixed(2);
-      compare.innerHTML =
+      callout.innerHTML =
         `<b>${first.race}</b> completion rates are <b>${ratio}x</b> those of <b>${second.race}</b> students. ` +
-        `<span style="font-size:0.9em; font-weight:normal">(Click another bar to reset)</span>`;
+        `Click another bar to reset.`;
     } else {
-      compare.textContent = `Selected ${d.race}. Select a second race to compare…`;
+      callout.textContent = `Selected ${d.race}. Select a second race to compare…`;
     }
   }
 

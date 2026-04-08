@@ -254,7 +254,7 @@ function drawS4(data) {
     .attr("font-size", "8px")
     .attr("font-family", "Helvetica,Arial,sans-serif")
     .attr("letter-spacing", "1.5px")
-    .text("PROGRESS (LAPS)");
+    .text("DEBTS PAID OFF");
 
   const scoreRows = scoreG
     .selectAll(".score-row")
