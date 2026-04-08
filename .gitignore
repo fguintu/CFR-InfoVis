@@ -12,4 +12,5 @@ __pycache__/
 
 # Data
 *.csv
+!/M5/data/filtered_data.csv
 *.parquet
