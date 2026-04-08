@@ -25,6 +25,7 @@ export function initS1(groups) {
     debtMetric: debtMetricEl ? debtMetricEl.value : "grad",
     earnYear: earnYearEl ? +earnYearEl.value : 6,
     pinned: null,
+    animSpeed: 1,
   };
 
   // ── Helpers ──
@@ -100,6 +101,16 @@ export function initS1(groups) {
     document.getElementById("part1-legend").style.opacity = "0";
   });
 
+  // ── Animation speed slider ──
+  const speedWrap = document.getElementById("s1-speed-control");
+  if (speedWrap) {
+    const speedLabel = speedWrap.querySelector("b");
+    speedWrap.querySelector("input").addEventListener("input", function () {
+      state.animSpeed = +this.value;
+      if (speedLabel) speedLabel.textContent = state.animSpeed + "x";
+    });
+  }
+
   // ── Init chart ──
 
   const api = drawS1(() => state, computeData);
@@ -171,7 +182,7 @@ function drawS1(getState, getData) {
   let pinned = null;
   let pinCb = () => {};
 
-   // ── Subtle gridlines ──
+  // ── Subtle gridlines ──
   y.ticks(5).forEach((t) => {
     g.append("line")
       .attr("x1", 0)
@@ -225,7 +236,7 @@ function drawS1(getState, getData) {
 
     yAx
       .transition()
-      .duration(500)
+      .duration(500 / getState().animSpeed)
       .call(
         d3
           .axisLeft(y)
@@ -279,16 +290,16 @@ function drawS1(getState, getData) {
 
     const mg = en.merge(grp);
     mg.transition()
-      .duration(350)
+      .duration(350 / getState().animSpeed)
       .attr("transform", (d) => `translate(${x0(d.label)},0)`);
     mg.select(".bd")
       .transition()
-      .duration(600)
+      .duration(600 / getState().animSpeed)
       .attr("y", (d) => y(d.debt))
       .attr("height", (d) => h - y(d.debt));
     mg.select(".be")
       .transition()
-      .duration(600)
+      .duration(600 / getState().animSpeed)
       .attr("y", (d) => y(d.earn))
       .attr("height", (d) => h - y(d.earn));
 
@@ -303,13 +314,13 @@ function drawS1(getState, getData) {
 
     yAx
       .transition()
-      .duration(500)
+      .duration(500 / getState().animSpeed)
       .call(d3.axisLeft(y).ticks(5).tickFormat(d3.format(".0%")));
     yAx.selectAll("text").attr("fill", "#666");
 
     g.selectAll(".bd,.be")
       .transition()
-      .duration(300)
+      .duration(300 / getState().animSpeed)
       .attr("height", 0)
       .attr("y", h);
 
@@ -341,7 +352,7 @@ function drawS1(getState, getData) {
       })
       .merge(bars)
       .transition()
-      .duration(600)
+      .duration(600 / getState().animSpeed)
       .attr("y", (d) => y(d.ratio))
       .attr("height", (d) => h - y(d.ratio))
       .attr("fill", (d) => color(d.ratio));
@@ -361,7 +372,7 @@ function drawS1(getState, getData) {
       .attr("font-weight", "700")
       .merge(lbl)
       .transition()
-      .duration(600)
+      .duration(600 / getState().animSpeed)
       .attr("y", (d) => y(d.ratio) - 6)
       .attr("opacity", 1)
       .tween("text", function (d) {
