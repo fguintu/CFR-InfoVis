@@ -12,7 +12,7 @@ const RACE_SPEC = [
   { r: "Asian", k: "_C150_ASIAN", c: C.green },
   { r: "American Ind.", k: "_C150_AIAN", c: C.orange },
   { r: "Pacific Isln.", k: "_C150_NHPI", c: C.teal },
-  { r: "Two+", k: "_C150_2MOR", c: C.purple },
+  { r: "Two Races+", k: "_C150_2MOR", c: C.purple },
 ];
 
 export function initS3(groups) {
